@@ -2,1139 +2,773 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
 <title>Biro Test – JEE/NEET CBT Analyzer</title>
-<meta name="description" content="AI-powered JEE/NEET test analyzer with deep analytics, Biro-Brain AI mentor, mistake book, goal tracker and more."/>
-
-<!-- React + Recharts CDN -->
-<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
-<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
-
+<meta name="description" content="AI-powered JEE/NEET CBT Analyzer"/>
+<meta name="theme-color" content="#2563eb"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@700;800&display=swap" rel="stylesheet"/>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap');
-  *{box-sizing:border-box;margin:0;padding:0}
-  html,body{background:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh}
-  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-  @keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
-  .fade-in{animation:fadeIn .3s ease}
-  .tab-btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap}
-  .tab-btn.active{background:#2563eb;color:#fff}
-  .tab-btn:not(.active){background:#e2e8f0;color:#475569}
-  .tab-btn:hover:not(.active){background:#cbd5e1}
-  .card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
-  .nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;transition:all .15s;color:#475569;font-weight:500;font-size:14px}
-  .nav-item:hover{background:#eff6ff;color:#2563eb}
-  .nav-item.active{background:#eff6ff;color:#2563eb;font-weight:700}
-  .q-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:11px;font-weight:700}
-  .q-badge.correct{background:#dcfce7;color:#16a34a}
-  .q-badge.incorrect{background:#fee2e2;color:#dc2626}
-  .q-badge.skipped{background:#f1f5f9;color:#94a3b8}
-  .chat-bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.6;max-width:90%;animation:fadeIn .3s ease}
-  .chat-bubble.user{background:#2563eb;color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
-  .chat-bubble.assistant{background:#fff;color:#1e293b;border-bottom-left-radius:4px;border:1px solid #e2e8f0;align-self:flex-start}
-  input,textarea,select{font-family:inherit}
-  .btn-primary{background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;transition:all .15s}
-  .btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}
-  .btn-danger{background:#ef4444;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px}
-  .recording-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 1s ease-in-out infinite}
-  input:focus,textarea:focus,select:focus{outline:none;border-color:#2563eb!important}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:#f1f5f9;font-family:'DM Sans',system-ui,sans-serif;min-height:100vh;overflow-x:hidden}
+:root{--blue:#2563eb;--blue-light:#eff6ff;--green:#22c55e;--green-light:#dcfce7;--red:#ef4444;--red-light:#fee2e2;--gray:#94a3b8;--gray-light:#f1f5f9;--yellow:#f59e0b;--purple:#7c3aed;--text:#111827;--sub:#6b7280;--border:#e2e8f0}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideLeft{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+#app{max-width:480px;margin:0 auto;min-height:100vh;position:relative;background:#f1f5f9}
+.header{background:#fff;border-bottom:1px solid var(--border);padding:11px 14px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100}
+.logo-box{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.page{padding:14px 14px 88px;animation:fadeIn .25s ease}
+.card{background:#fff;border-radius:14px;border:1px solid var(--border)}
+.cp{padding:14px}
+.bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid var(--border);display:flex;z-index:100;padding-bottom:env(safe-area-inset-bottom,0)}
+.bnav-btn{flex:1;background:none;border:none;cursor:pointer;padding:7px 4px 9px;display:flex;flex-direction:column;align-items:center;gap:2px;color:#9ca3af;font-family:inherit;font-size:9px;font-weight:500;transition:color .15s}
+.bnav-btn.active{color:var(--blue);font-weight:700}
+.drawer-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;display:none}
+.drawer-overlay.open{display:block}
+.drawer{position:fixed;left:0;top:0;bottom:0;width:268px;background:#fff;z-index:201;padding:14px 10px;overflow-y:auto;transform:translateX(-100%);transition:transform .22s ease}
+.drawer.open{transform:translateX(0)}
+.nav-item{display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:10px;cursor:pointer;color:#475569;font-weight:500;font-size:14px;transition:all .12s;margin-bottom:2px}
+.nav-item:hover,.nav-item.active{background:var(--blue-light);color:var(--blue)}
+.nav-item.active{font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:none;border-radius:10px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;padding:10px 18px;transition:all .15s}
+.btn-p{background:var(--blue);color:#fff}.btn-p:hover{background:#1d4ed8}.btn-p:disabled{opacity:.6;cursor:not-allowed}
+.btn-d{background:var(--red);color:#fff}
+.btn-o{background:#fff;color:var(--blue);border:2px solid var(--blue)}
+.btn-g{background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff}
+.btn-w{width:100%;justify-content:center}
+input,textarea,select{font-family:inherit;font-size:14px;border:1.5px solid var(--border);border-radius:9px;padding:9px 12px;width:100%;background:#fff;color:var(--text);outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--blue)}
+textarea{resize:vertical}
+label{font-size:12px;font-weight:600;color:#374151;display:block;margin-bottom:5px}
+.sg{display:flex;gap:10px;margin-bottom:12px}
+.sc{background:#fff;border-radius:12px;padding:13px 14px;border:1px solid var(--border);flex:1;min-width:0}
+.sl{font-size:10px;color:var(--sub);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.sv{font-size:22px;font-weight:800;line-height:1.2;margin-top:2px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{padding:6px 13px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:12px;font-weight:600;white-space:nowrap;transition:all .12s;flex-shrink:0}
+.tab.active{background:var(--blue);color:#fff}
+.tab:not(.active){background:#e2e8f0;color:#475569}
+.chip{display:inline-block;font-size:10px;background:var(--gray-light);color:#475569;padding:2px 8px;border-radius:20px;font-weight:600}
+.qb{display:inline-flex;align-items:center;justify-content:center;width:27px;height:27px;border-radius:7px;font-size:10px;font-weight:700}
+.qb.correct{background:var(--green-light);color:#16a34a}.qb.incorrect{background:var(--red-light);color:#dc2626}.qb.skipped{background:var(--gray-light);color:var(--gray)}
+.chat-wrap{display:flex;flex-direction:column;gap:10px;overflow-y:auto;flex:1;padding-bottom:10px;min-height:0}
+.bubble{padding:10px 13px;border-radius:14px;font-size:13px;line-height:1.65;max-width:92%;animation:fadeIn .25s ease;word-break:break-word}
+.bubble.user{background:var(--blue);color:#fff;border-bottom-right-radius:3px;align-self:flex-end}
+.bubble.ai{background:#fff;color:var(--text);border-bottom-left-radius:3px;border:1px solid var(--border);align-self:flex-start}
+.tdot{width:8px;height:8px;border-radius:50%;background:#94a3b8;animation:blink 1.2s ease-in-out infinite;display:inline-block}
+.prog-bar{height:9px;border-radius:5px;background:#f1f5f9;overflow:hidden;display:flex}
+.toast{position:fixed;top:66px;left:50%;transform:translateX(-50%);z-index:999;border-radius:10px;padding:9px 18px;font-size:13px;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.15);white-space:nowrap;animation:fadeIn .2s ease;pointer-events:none}
+.toast.s{background:#22c55e;color:#fff}.toast.e{background:#ef4444;color:#fff}.toast.i{background:#2563eb;color:#fff}
+.rec{width:9px;height:9px;border-radius:50%;background:#ef4444;animation:blink .8s ease-in-out infinite;flex-shrink:0;display:inline-block}
+.li{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f8fafc}
+.li:last-child{border-bottom:none}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.sec-t{font-size:20px;font-weight:800;color:var(--text);font-family:'Space Grotesk',sans-serif}
+.sec-s{font-size:13px;color:var(--sub);margin-top:2px;margin-bottom:16px}
+.spin-loader{width:20px;height:20px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
 </style>
 </head>
 <body>
-<div id="root"></div>
+<div id="app">
+  <div class="header">
+    <button onclick="toggleDrawer()" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;color:#374151;flex-shrink:0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="22" height="22"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <div class="logo-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="18" height="18"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/></svg>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:800;color:var(--text);font-family:'Space Grotesk',sans-serif;line-height:1">Biro Test</div>
+      <div style="font-size:10px;color:var(--sub);font-weight:500">CBT Analyzer</div>
+    </div>
+    <div id="rec-badge" style="display:none;background:#fee2e2;color:#dc2626;border-radius:8px;padding:3px 9px;font-size:12px;font-weight:700;align-items:center;gap:5px">
+      <span class="rec"></span><span id="rec-time">00:00</span>
+    </div>
+    <button onclick="go('settings')" style="background:none;border:none;cursor:pointer;padding:3px;display:flex;color:#6b7280">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+  </div>
+  <div class="drawer-overlay" id="dov" onclick="toggleDrawer()"></div>
+  <div class="drawer" id="drw">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;padding:0 4px">
+      <div style="display:flex;align-items:center;gap:9px">
+        <div class="logo-box" style="width:38px;height:38px;border-radius:12px"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" width="20" height="20"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/></svg></div>
+        <div><div style="font-size:16px;font-weight:800;font-family:'Space Grotesk',sans-serif">Biro Test</div><div style="font-size:11px;color:var(--sub)">CBT Analyzer</div></div>
+      </div>
+      <button onclick="toggleDrawer()" style="background:none;border:none;cursor:pointer;color:#6b7280;display:flex">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div id="nav-links"></div>
+    <div style="margin-top:14px;padding:10px 12px;background:#f8fafc;border-radius:10px;font-size:12px;color:var(--sub)">Biro Test v1.0 · Made for JEE/NEET 🎯</div>
+  </div>
+  <div id="pg"></div>
+  <div class="bottom-nav" id="bnav"></div>
+  <div class="toast" id="toast" style="display:none"></div>
+</div>
 
-<script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
-const { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } = Recharts;
-
-// ── CONSTANTS ──
-const SUBJECTS = ["Mathematics","Physics","Chemistry"];
-const CHAPTERS = {
-  Mathematics:["Matrices & Determinants","Permutations & Combinations","Polynomials","3D Geometry","Probability","Integral Calculus","Area Under Curves","Inverse Trig Functions","Conic Sections","Vector Algebra","Limits","Functions","Sequences & Series","Differential Equations","Complex Numbers","Trigonometry"],
-  Physics:["Semiconductor Electronics","Properties of Matter","Rotational Motion","Ray Optics","Wave Optics","Electromagnetic Induction","Projectile Motion","Work Energy Power","Oscillations","Units & Dimensions","Thermodynamics","Electrostatics","Current Electricity","Magnetism"],
-  Chemistry:["Qualitative Analysis","Basic Concepts","Thermodynamics","Organic Chemistry","Electrochemistry","Chemical Bonding","Equilibrium","Coordination Compounds","s-Block Elements","p-Block Elements","Biomolecules","Polymers"],
+<script>
+// ── STATE ──
+var S={
+  page:'dashboard',
+  tests:lsGet('biro-tests',[]),
+  cur:lsGet('biro-cur',null),
+  mb:lsGet('biro-mb',[]),
+  goal:lsGet('biro-goal',{college:'IIT Bombay – CS',hours:8,months:6}),
+  posts:lsGet('biro-posts',[
+    {id:1,name:'Rahul',text:'Wave Optics Q34 ka concept samjhao koi? 😭',time:'2h ago',likes:8},
+    {id:2,name:'Priya',text:'QFT-01 attempt kiya? Maths bahut tough tha!',time:'5h ago',likes:14},
+  ]),
+  chat:[{r:'ai',c:'⚡ <b>Biro-Brain online!</b> Tera JEE/NEET AI mentor hoon.<br><br>• 📊 Test results analyze karna<br>• 🗓️ Study plan banana<br>• 💡 Doubts solve karna<br>• 🎯 Strategy<br><br>Koi bhi doubt pucho!'}],
+  atab:'overview',
+  key:localStorage.getItem('biro-key')||'',
+  mon:false,monT:0,monInt:null,
+  plan:localStorage.getItem('biro-plan')||'',
+  chatLoading:false,
 };
-const COLLEGES=[
-  {name:"IIT Bombay – CS",cutoff:280,exam:"JEE Advanced"},
-  {name:"IIT Delhi – CS",cutoff:270,exam:"JEE Advanced"},
-  {name:"IIT Madras – CS",cutoff:265,exam:"JEE Advanced"},
-  {name:"IIT Kanpur – CS",cutoff:255,exam:"JEE Advanced"},
-  {name:"NIT Trichy – CSE",cutoff:200,exam:"JEE Main"},
-  {name:"NIT Warangal – CSE",cutoff:190,exam:"JEE Main"},
-  {name:"AIIMS Delhi",cutoff:680,exam:"NEET"},
-  {name:"JIPMER",cutoff:650,exam:"NEET"},
+
+function lsGet(k,def){try{var v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;}}
+function lsSave(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+
+// ── DATA ──
+var SUBJ=['Mathematics','Physics','Chemistry'];
+var CH={
+  Mathematics:['Matrices & Determinants','Permutations & Combinations','Polynomials','3D Geometry','Probability','Integral Calculus','Area Under Curves','Inverse Trig','Conic Sections','Vector Algebra','Limits','Functions','Sequences & Series','Differential Equations','Complex Numbers','Trigonometry'],
+  Physics:['Semiconductor Electronics','Properties of Matter','Rotational Motion','Ray Optics','Wave Optics','Electromagnetic Induction','Projectile Motion','Work Energy Power','Oscillations','Units & Dimensions','Thermodynamics','Electrostatics','Current Electricity','Magnetism'],
+  Chemistry:['Qualitative Analysis','Basic Concepts','Thermodynamics','Organic Chemistry','Electrochemistry','Chemical Bonding','Equilibrium','Coordination Compounds','s-Block','p-Block','Biomolecules','Polymers'],
+};
+var COLLEGES=[
+  {n:'IIT Bombay – CS',c:280},{n:'IIT Delhi – CS',c:270},{n:'IIT Madras – CS',c:265},
+  {n:'IIT Kanpur – CS',c:255},{n:'NIT Trichy – CSE',c:200},{n:'NIT Warangal – CSE',c:190},
+  {n:'AIIMS Delhi',c:680},{n:'JIPMER',c:650},
+];
+var NAV=[
+  {id:'dashboard',lbl:'Dashboard',e:'🏠'},
+  {id:'tests',lbl:'My Tests',e:'📄'},
+  {id:'external',lbl:'External Analysis',e:'🔍'},
+  {id:'planner',lbl:'Study Planner',e:'📅'},
+  {id:'birobrain',lbl:'Biro-Brain AI',e:'🧠'},
+  {id:'mistakes',lbl:'Mistake Book',e:'📖'},
+  {id:'goal',lbl:'Goal Tracker',e:'🎯'},
+  {id:'community',lbl:'Community',e:'👥'},
+  {id:'history',lbl:'History',e:'📊'},
+  {id:'settings',lbl:'Settings',e:'⚙️'},
 ];
 
-// ── STORAGE ──
-const store = {
-  get:(k)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch{return null}},
-  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
-};
-
-// ── ICONS ──
-const icons = {
-  dashboard:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
-  tests:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
-  external:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
-  planner:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
-  brain:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/></svg>,
-  book:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
-  goal:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
-  community:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
-  history:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>,
-  menu:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
-  close:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  send:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>,
-  monitor:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
-  plus:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  sparkle:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3L13.5 8.5L19 10L13.5 11.5L12 17L10.5 11.5L5 10L10.5 8.5L12 3Z"/><path d="M5 3L5.75 5.5L8 6.25L5.75 7L5 9.5L4.25 7L2 6.25L4.25 5.5L5 3Z"/></svg>,
-  chart:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
-  fire:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
-  settings:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
-  download:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
-};
-const Icon = ({name,size=20,color="currentColor"}) => (
-  <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,color,flexShrink:0}}>
-    {React.cloneElement(icons[name]||<svg/>,{width:size,height:size})}
-  </span>
-);
-
-// ── HELPERS ──
-const fmt = (s)=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
-const parseAnswerStr = (str)=>{
-  const res={};
-  if(!str.trim()) return res;
-  if(str.includes("-")||str.includes(",")||str.includes(".")){
-    str.split(/[,\n]/).forEach(p=>{
-      const parts=p.trim().split(/[-.\s]+/);
-      if(parts.length>=2){const n=parseInt(parts[0]);const a=parts[parts.length-1].toUpperCase();if(!isNaN(n)&&a)res[n-1]=a;}
-    });
-  } else {
-    str.replace(/\s/g,"").split("").forEach((c,i)=>{res[i]=c.toUpperCase();});
-  }
-  return res;
-};
-const renderMd = (t)=>{
-  if(!t) return "";
-  return t
-    .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
-    .replace(/\*(.*?)\*/g,"<em>$1</em>")
-    .replace(/`(.*?)`/g,"<code style='background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px'>$1</code>")
-    .replace(/\n/g,"<br/>");
-};
-
-// ── ANALYSIS GENERATOR ──
-const generateAnalysis = (userAns, keyAns, scheme, testName) => {
-  let correct=0,incorrect=0,skipped=0;
-  const ss={
-    Mathematics:{correct:0,incorrect:0,skipped:0,qs:25},
-    Physics:{correct:0,incorrect:0,skipped:0,qs:25},
-    Chemistry:{correct:0,incorrect:0,skipped:0,qs:25},
-  };
-  const missed={Mathematics:[],Physics:[],Chemistry:[]};
-  const qResults=[];
-  for(let i=0;i<75;i++){
-    const s=i<25?"Mathematics":i<50?"Physics":"Chemistry";
-    const ch=CHAPTERS[s][i%CHAPTERS[s].length];
-    const ua=userAns[i]||null;
-    const ca=keyAns[i]||["A","B","C","D"][Math.floor(Math.random()*4)];
-    let result=ua?(ua===ca?"correct":"incorrect"):"skipped";
-    if(result==="correct"){correct++;ss[s].correct++;}
-    else if(result==="incorrect"){incorrect++;ss[s].incorrect++;if(!missed[s].includes(ch))missed[s].push(ch);}
-    else{skipped++;ss[s].skipped++;}
-    qResults.push({q:i+1,s,ch,result,ua,ca});
-  }
-  const score=correct*scheme.correct - incorrect*scheme.wrong;
-  const max=75*scheme.correct;
-  const acc=correct+incorrect>0?Math.round(correct/(correct+incorrect)*100):0;
-  const personas=["The Gambler 🎲","The Safe Player 🛡️","The Speedster ⚡","The Overthinker 🤔","The Wild Card 🃏","The Sniper 🎯"];
-  return {
-    id:Date.now(),testName,score,max,acc,correct,incorrect,skipped,scheme,ss,missed,qResults,
-    aq:{perfect:correct,wasted:Math.round(incorrect*.6),overtime:Math.round(correct*.2),confused:Math.round(incorrect*.15)},
-    sp:{actual:score,p50:score+Math.round(incorrect*.5*scheme.correct),p75:score+Math.round(incorrect*.75*scheme.correct),p100:score+incorrect*scheme.correct},
-    persona:personas[Math.floor(Math.random()*personas.length)],
-    negLost:incorrect*scheme.wrong,
-    ts:new Date().toLocaleDateString("en-IN"),
-  };
-};
-
-// ── BIRO-BRAIN API ──
-const callAI = async (messages, ctx=null) => {
-  const sys=`You are "Biro-Brain," an elite AI Mentor for JEE/NEET aspirants. Be energetic, data-driven, direct — like a top IIT alumnus.
-${ctx?`Test context: Score ${ctx.score}/${ctx.max}, Accuracy ${ctx.acc}%, Missed: ${JSON.stringify(ctx.missed)}`:""}
-Rules:
-- Concise bullet points, bold key terms
-- Gamify: "quests", "boss raids", "leveling up"
-- LaTeX for math: inline $formula$, block $$formula$$
-- No generic quotes — tie to their actual data
-- Hint first for doubts, full solution if pressed
-- Be brutally honest about wasted marks`;
-  const r=await fetch("https://api.anthropic.com/v1/messages",{
-    method:"POST",
-    headers:{"Content-Type":"application/json"},
-    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages}),
-  });
-  const d=await r.json();
-  if(d.error) throw new Error(d.error.message);
-  return d.content?.map(b=>b.text||"").join("")||"No response.";
-};
-
-// ── STAT CARD ──
-const StatCard=({label,value,color="#2563eb",sub})=>(
-  <div style={{background:"#fff",borderRadius:12,padding:"14px 16px",border:"1px solid #e2e8f0",flex:1,minWidth:90}}>
-    <div style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
-    <div style={{fontSize:24,fontWeight:800,color,lineHeight:1.2,marginTop:2}}>{value}</div>
-    {sub&&<div style={{fontSize:10,color:"#9ca3af",marginTop:1}}>{sub}</div>}
-  </div>
-);
-
-// ── MAIN APP ──
-function App() {
-  const [page,setPage]=useState("dashboard");
-  const [drawer,setDrawer]=useState(false);
-  const [tests,setTests]=useState(()=>store.get("biro-tests")||[]);
-  const [analysis,setAnalysis]=useState(()=>store.get("biro-cur")||null);
-  const [analysisTab,setATab]=useState("overview");
-  const [mistakes,setMistakes]=useState(()=>store.get("biro-mb")||[]);
-  const [goal,setGoal]=useState(()=>store.get("biro-goal")||{college:"IIT Bombay – CS",hours:8,months:6});
-  const [posts,setPosts]=useState(()=>store.get("biro-posts")||[
-    {id:1,name:"Rahul",text:"Wave Optics Q34 ka concept kisi ne samjha? Mujhe interference pattern ka derivation nahi aata 😭",time:"2h ago",likes:8},
-    {id:2,name:"Priya",text:"QFT-01 attempt kiya? Maths section tough tha iske baar!",time:"5h ago",likes:14},
-  ]);
-  const [postInput,setPostInput]=useState("");
-  const [chatMsgs,setChatMsgs]=useState([{role:"assistant",content:"⚡ **Biro-Brain online.** Main tera JEE/NEET AI mentor hoon.\n\n**Kya kar sakta hoon:**\n- 📊 Test results analyze karna\n- 🗓️ Study plan banana\n- 💡 Doubts solve karna (step-by-step)\n- 🎯 Strategy suggest karna\n\nApna test results share karo ya koi doubt pucho!"}]);
-  const [chatInput,setChatInput]=useState("");
-  const [chatLoading,setChatLoading]=useState(false);
-  const [plan,setPlan]=useState(()=>store.get("biro-plan")||null);
-  const [planLoading,setPlanLoading]=useState(false);
-  const [apiKey,setApiKey]=useState(()=>store.get("biro-key")||"");
-  const [showKeyModal,setShowKeyModal]=useState(false);
-  const [monitor,setMonitor]=useState(false);
-  const [monTime,setMonTime]=useState(0);
-  const [extName,setExtName]=useState("My Test");
-  const [extKey,setExtKey]=useState("");
-  const [extAns,setExtAns]=useState("");
-  const [scheme,setScheme]=useState({correct:4,wrong:1});
-  const [toast,setToast]=useState(null);
-  const chatEnd=useRef(null);
-  const monRef=useRef(null);
-  const streamRef=useRef(null);
-
-  useEffect(()=>{store.set("biro-tests",tests)},[tests]);
-  useEffect(()=>{store.set("biro-mb",mistakes)},[mistakes]);
-  useEffect(()=>{store.set("biro-goal",goal)},[goal]);
-  useEffect(()=>{store.set("biro-posts",posts)},[posts]);
-  useEffect(()=>{store.set("biro-plan",plan)},[plan]);
-  useEffect(()=>{if(apiKey)store.set("biro-key",apiKey)},[apiKey]);
-  useEffect(()=>{chatEnd.current?.scrollIntoView({behavior:"smooth"})},[chatMsgs]);
-
-  useEffect(()=>{
-    if(monitor){monRef.current=setInterval(()=>setMonTime(t=>t+1),1000);}
-    else{clearInterval(monRef.current);setMonTime(0);}
-    return ()=>clearInterval(monRef.current);
-  },[monitor]);
-
-  const showToast=(msg,type="success")=>{
-    setToast({msg,type});
-    setTimeout(()=>setToast(null),3000);
-  };
-
-  const handleGenerateAnalysis=()=>{
-    if(!extKey.trim()){showToast("Answer key daalo pehle!","error");return;}
-    const ua=parseAnswerStr(extAns);
-    const ka=parseAnswerStr(extKey);
-    const a=generateAnalysis(ua,ka,scheme,extName||"Test");
-    // push wrong qs to mistake book
-    const newMb=[...mistakes,...a.qResults.filter(q=>q.result==="incorrect").map(q=>({...q,date:a.ts,tn:a.testName,id:`${a.id}-${q.q}`}))].slice(-300);
-    setMistakes(newMb);
-    setTests(prev=>[a,...prev]);
-    store.set("biro-cur",a);
-    setAnalysis(a);
-    setPage("analysis");
-    setATab("overview");
-    showToast("Analysis ready! 🎉");
-  };
-
-  const handleStartMonitor=async()=>{
-    try{
-      const s=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
-      streamRef.current=s;
-      setMonitor(true);
-      showToast("Screen monitoring started! 🔴");
-    }catch{
-      setMonitor(true);
-      showToast("Demo mode – monitor started!");
-    }
-  };
-
-  const handleStopMonitor=()=>{
-    if(streamRef.current){streamRef.current.getTracks().forEach(t=>t.stop());streamRef.current=null;}
-    setMonitor(false);
-    showToast(`Session ended – ${fmt(monTime)} recorded`);
-  };
-
-  const sendChat=async()=>{
-    if(!chatInput.trim()||chatLoading) return;
-    const userMsg={role:"user",content:chatInput};
-    const newMsgs=[...chatMsgs,userMsg];
-    setChatMsgs(newMsgs);
-    setChatInput("");
-    setChatLoading(true);
-    try{
-      const apiMsgs=newMsgs.map(m=>({role:m.role,content:m.content}));
-      const res=await callAI(apiMsgs,analysis);
-      setChatMsgs([...newMsgs,{role:"assistant",content:res}]);
-    }catch(e){
-      setChatMsgs([...newMsgs,{role:"assistant",content:`❌ Error: ${e.message}\n\nIf API key issue hai toh Settings mein check karo.`}]);
-    }
-    setChatLoading(false);
-  };
-
-  const genPlan=async()=>{
-    setPlanLoading(true);
-    const ctx=analysis?`Missed: ${JSON.stringify(analysis.missed)}, Score: ${analysis.score}/${analysis.max}, Acc: ${analysis.acc}%`:`Target: ${goal.college}`;
-    try{
-      const res=await callAI([{role:"user",content:`Generate a detailed 7-day JEE study plan. Context: ${ctx}. Target college: ${goal.college}. Daily study hours: ${goal.hours}. Use RPG format: Day titles, Daily Quests (topics to study), Boss Raid (hardest missed concept), XP Reward. Make it specific and actionable.`}],analysis);
-      setPlan(res);
-    }catch(e){setPlan(`Error: ${e.message}`);}
-    setPlanLoading(false);
-  };
-
-  const targetCollege=COLLEGES.find(c=>c.name===goal.college)||COLLEGES[0];
-  const avgScore=tests.length?Math.round(tests.reduce((a,t)=>a+(t.score||0),0)/tests.length):0;
-  const marksGap=Math.max(0,targetCollege.cutoff-avgScore);
-
-  const navItems=[
-    {id:"dashboard",label:"Dashboard",icon:"dashboard"},
-    {id:"tests",label:"My Tests",icon:"tests"},
-    {id:"external",label:"External Analysis",icon:"external"},
-    {id:"planner",label:"Study Planner",icon:"planner"},
-    {id:"birobrain",label:"Biro-Brain AI",icon:"brain"},
-    {id:"mistakes",label:"Mistake Book",icon:"book"},
-    {id:"goal",label:"Goal Tracker",icon:"goal"},
-    {id:"community",label:"Community",icon:"community"},
-    {id:"history",label:"History",icon:"history"},
-    {id:"settings",label:"Settings",icon:"settings"},
-  ];
-
-  const goAnalysis=(t)=>{store.set("biro-cur",t);setAnalysis(t);setPage("analysis");setATab("overview");};
-
-  return (
-    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#f1f5f9",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"}}>
-
-      {/* TOAST */}
-      {toast&&(
-        <div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",zIndex:999,background:toast.type==="error"?"#ef4444":"#22c55e",color:"#fff",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,.15)",animation:"fadeIn .3s ease",whiteSpace:"nowrap"}}>
-          {toast.msg}
-        </div>
-      )}
-
-      {/* HEADER */}
-      <div style={{background:"#fff",borderBottom:"1px solid #e2e8f0",padding:"12px 16px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:100}}>
-        <button onClick={()=>setDrawer(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,color:"#374151",display:"flex"}}><Icon name="menu" size={22}/></button>
-        <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
-          <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#2563eb,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-            <Icon name="brain" size={18} color="#fff"/>
-          </div>
-          <div>
-            <div style={{fontSize:15,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif",lineHeight:1}}>Biro Test</div>
-            <div style={{fontSize:10,color:"#6b7280",fontWeight:500}}>CBT Analyzer</div>
-          </div>
-        </div>
-        {monitor&&(
-          <div style={{background:"#fee2e2",color:"#dc2626",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
-            <div className="recording-dot"/>
-            {fmt(monTime)}
-          </div>
-        )}
-        <button onClick={()=>setPage("settings")} style={{background:"none",border:"none",cursor:"pointer",padding:4,color:"#6b7280",display:"flex"}}><Icon name="settings" size={20}/></button>
-      </div>
-
-      {/* DRAWER */}
-      {drawer&&(
-        <div style={{position:"fixed",inset:0,zIndex:200}} onClick={()=>setDrawer(false)}>
-          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.45)"}}/>
-          <div style={{position:"absolute",left:0,top:0,bottom:0,width:270,background:"#fff",animation:"slideIn .2s ease",padding:"16px 10px",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,padding:"0 6px"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(135deg,#2563eb,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                  <Icon name="brain" size={20} color="#fff"/>
-                </div>
-                <div>
-                  <div style={{fontSize:16,fontWeight:800,fontFamily:"'Space Grotesk',sans-serif",color:"#111827"}}>Biro Test</div>
-                  <div style={{fontSize:11,color:"#6b7280"}}>CBT Analyzer</div>
-                </div>
-              </div>
-              <button onClick={()=>setDrawer(false)} style={{background:"none",border:"none",cursor:"pointer",color:"#6b7280",display:"flex"}}><Icon name="close" size={20}/></button>
-            </div>
-            {navItems.map(item=>(
-              <div key={item.id} className={`nav-item ${page===item.id?"active":""}`} onClick={()=>{setPage(item.id);setDrawer(false);}}>
-                <Icon name={item.icon} size={18}/>{item.label}
-              </div>
-            ))}
-            <div style={{marginTop:16,padding:"10px 14px",background:"#f8fafc",borderRadius:10,fontSize:12,color:"#6b7280"}}>
-              <strong style={{color:"#374151"}}>v1.0</strong> · NTA Classic Mode · Made with ❤️ for JEE aspirants
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* CONTENT */}
-      <div style={{padding:"16px 16px 90px"}}>
-
-        {/* ═══ DASHBOARD ═══ */}
-        {page==="dashboard"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Dashboard</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>Welcome back, aspirant ⚡</div>
-            </div>
-            <div style={{display:"flex",gap:10,marginBottom:14}}>
-              <StatCard label="Avg Accuracy" value={`${tests.length?Math.round(tests.reduce((a,t)=>a+(t.acc||0),0)/tests.length):0}%`} color={tests.length&&tests[0]?.acc>50?"#22c55e":"#ef4444"}/>
-              <StatCard label="Avg Score" value={avgScore>0?`+${avgScore}`:avgScore} color={avgScore>0?"#22c55e":"#ef4444"} sub={`/${tests[0]?.max||300}`}/>
-              <StatCard label="Tests" value={tests.length} color="#2563eb"/>
-            </div>
-
-            {/* Target banner */}
-            <div className="card" style={{padding:16,marginBottom:14,background:"linear-gradient(135deg,#eff6ff,#f0fdf4)"}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
-                <div>
-                  <div style={{fontSize:10,color:"#6b7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Your Target</div>
-                  <div style={{fontSize:16,fontWeight:800,color:"#111827",marginTop:2}}>{goal.college}</div>
-                  <div style={{fontSize:12,color:"#6b7280"}}>Cutoff: {targetCollege.cutoff} marks</div>
-                </div>
-                <div style={{textAlign:"center"}}>
-                  <div style={{fontSize:34,fontWeight:900,color:marksGap>0?"#ef4444":"#22c55e",lineHeight:1}}>{marksGap}</div>
-                  <div style={{fontSize:10,color:"#6b7280"}}>marks gap</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            <div style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Quick Actions</div>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
-              {[
-                {label:"External Analysis",icon:"external",p:"external",color:"#7c3aed",bg:"#f3e8ff"},
-                {label:"Biro-Brain AI",icon:"brain",p:"birobrain",color:"#059669",bg:"#d1fae5"},
-                {label:"Mistake Book",icon:"book",p:"mistakes",color:"#d97706",bg:"#fef3c7"},
-                {label:"Goal Tracker",icon:"goal",p:"goal",color:"#dc2626",bg:"#fee2e2"},
-              ].map(a=>(
-                <div key={a.p} onClick={()=>setPage(a.p)} className="card" style={{padding:"14px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"transform .15s"}}
-                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
-                  <div style={{width:38,height:38,borderRadius:10,background:a.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <Icon name={a.icon} size={18} color={a.color}/>
-                  </div>
-                  <div style={{fontSize:13,fontWeight:600,color:"#374151"}}>{a.label}</div>
-                </div>
-              ))}
-            </div>
-
-            {/* Perf trend */}
-            {tests.length>0?(
-              <div className="card" style={{padding:16}}>
-                <div style={{fontSize:14,fontWeight:700,color:"#111827",marginBottom:12}}>Performance Trend</div>
-                <ResponsiveContainer width="100%" height={150}>
-                  <LineChart data={[...tests].reverse().slice(0,10).map((t,i)=>({name:`T${i+1}`,score:t.score,acc:t.acc}))}>
-                    <XAxis dataKey="name" tick={{fontSize:10}}/>
-                    <YAxis tick={{fontSize:10}}/>
-                    <Tooltip contentStyle={{fontSize:11,borderRadius:8,border:"1px solid #e2e8f0"}}/>
-                    <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} dot={{r:3}} name="Score"/>
-                    <Line type="monotone" dataKey="acc" stroke="#22c55e" strokeWidth={2} dot={{r:3}} name="Accuracy %"/>
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            ):(
-              <div className="card" style={{padding:32,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:12}}>📊</div>
-                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi test nahi abhi tak</div>
-                <div style={{fontSize:13,color:"#6b7280",marginTop:4,marginBottom:16}}>Pehla analysis generate karo performance dekhne ke liye</div>
-                <button className="btn-primary" onClick={()=>setPage("external")}>Start Analysis</button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ EXTERNAL ANALYSIS ═══ */}
-        {page==="external"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>External Analysis</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>Kisi bhi platform ka test analyze karo</div>
-            </div>
-
-            {/* Monitor */}
-            <div className="card" style={{padding:16,marginBottom:14,border:monitor?"2px solid #f59e0b":"1px solid #e2e8f0",background:monitor?"#fffbeb":"#fff"}}>
-              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
-                <Icon name="monitor" size={20} color={monitor?"#f59e0b":"#6b7280"}/>
-                <div>
-                  <div style={{fontSize:14,fontWeight:700}}>Screen Monitor</div>
-                  <div style={{fontSize:12,color:"#6b7280"}}>Dusre platform pe test dete time monitor karo</div>
-                </div>
-              </div>
-              {monitor?(
-                <div>
-                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
-                    <div className="recording-dot"/>
-                    <span style={{fontSize:14,fontWeight:700,color:"#dc2626"}}>Recording — {fmt(monTime)}</span>
-                  </div>
-                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
-                    {[["Switches",Math.floor(monTime/120)],["Est Qs",Math.floor(monTime/30)],["Reviews",Math.floor(monTime/90)]].map(([l,v])=>(
-                      <div key={l} style={{background:"#fff",borderRadius:8,padding:"8px",textAlign:"center",border:"1px solid #fde68a"}}>
-                        <div style={{fontSize:18,fontWeight:800,color:"#f59e0b"}}>{v}</div>
-                        <div style={{fontSize:10,color:"#6b7280"}}>{l}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <button className="btn-danger" onClick={handleStopMonitor} style={{width:"100%"}}>Stop Monitor</button>
-                </div>
-              ):(
-                <button onClick={handleStartMonitor} style={{width:"100%",background:"#f59e0b",color:"#fff",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  <Icon name="monitor" size={16} color="#fff"/> Start Monitor Session
-                </button>
-              )}
-            </div>
-
-            {/* Data input */}
-            <div className="card" style={{padding:16}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Generate Deep Analysis</div>
-
-              <div style={{marginBottom:12}}>
-                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>Test Name</label>
-                <input value={extName} onChange={e=>setExtName(e.target.value)} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}} placeholder="e.g. QFT-01 Paper"/>
-              </div>
-
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-                <div>
-                  <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>Correct (+)</label>
-                  <input type="number" value={scheme.correct} onChange={e=>setScheme(p=>({...p,correct:+e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}}/>
-                </div>
-                <div>
-                  <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>Wrong (−)</label>
-                  <input type="number" value={scheme.wrong} onChange={e=>setScheme(p=>({...p,wrong:+e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}}/>
-                </div>
-              </div>
-
-              <div style={{marginBottom:12}}>
-                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>
-                  Answer Key <span style={{color:"#6b7280",fontWeight:400}}>(1-A, 2-B, 3-C... ya ABCD...)</span>
-                </label>
-                <textarea value={extKey} onChange={e=>setExtKey(e.target.value)} rows={3} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,resize:"vertical"}} placeholder="1-A, 2-B, 3-C... ya ABCDBADBC..."/>
-              </div>
-
-              <div style={{marginBottom:16}}>
-                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>
-                  Tumhare Answers <span style={{color:"#6b7280",fontWeight:400}}>(same format, blank = skipped)</span>
-                </label>
-                <textarea value={extAns} onChange={e=>setExtAns(e.target.value)} rows={3} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,resize:"vertical"}} placeholder="1-B, 2-A, 3-D..."/>
-              </div>
-
-              <button onClick={handleGenerateAnalysis} style={{width:"100%",background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",border:"none",borderRadius:10,padding:"13px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                <Icon name="sparkle" size={17} color="#fff"/> Generate Analysis
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ ANALYSIS ═══ */}
-        {page==="analysis"&&analysis&&(
-          <div className="fade-in">
-            <div style={{marginBottom:14}}>
-              <div style={{fontSize:18,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>{analysis.testName}</div>
-              <div style={{fontSize:12,color:"#6b7280"}}>Attempt #1 · {analysis.ts}</div>
-            </div>
-
-            {/* Score cards */}
-            <div style={{display:"flex",gap:10,marginBottom:12}}>
-              <StatCard label="Score" value={analysis.score} color={analysis.score>0?"#2563eb":"#ef4444"} sub={`/${analysis.max}`}/>
-              <StatCard label="Accuracy" value={`${analysis.acc}%`} color={analysis.acc>50?"#22c55e":"#ef4444"}/>
-            </div>
-            <div style={{display:"flex",gap:10,marginBottom:14}}>
-              <StatCard label="Correct ✓" value={analysis.correct} color="#22c55e" sub={`+${analysis.correct*analysis.scheme.correct}`}/>
-              <StatCard label="Wrong ✗" value={analysis.incorrect} color="#ef4444" sub={`-${analysis.incorrect*analysis.scheme.wrong}`}/>
-              <StatCard label="Skipped" value={analysis.skipped} color="#94a3b8"/>
-            </div>
-
-            {/* Bar */}
-            <div className="card" style={{padding:14,marginBottom:14}}>
-              <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Overall Performance</div>
-              <div style={{height:10,borderRadius:5,background:"#f1f5f9",overflow:"hidden",display:"flex"}}>
-                <div style={{width:`${(analysis.correct/75)*100}%`,background:"#22c55e",transition:"width .8s"}}/>
-                <div style={{width:`${(analysis.incorrect/75)*100}%`,background:"#ef4444",transition:"width .8s"}}/>
-              </div>
-              <div style={{display:"flex",gap:14,marginTop:6,fontSize:11}}>
-                {[["#22c55e","Correct",analysis.correct],["#ef4444","Incorrect",analysis.incorrect],["#94a3b8","Skipped",analysis.skipped]].map(([c,l,v])=>(
-                  <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
-                    <div style={{width:8,height:8,borderRadius:2,background:c}}/>
-                    <span style={{color:"#6b7280"}}>{l} ({v})</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none"}}>
-              {[["overview","Overview"],["attempt","Attempt"],["potential","Potential"],["time","Journey"],["chapters","Chapters"],["missed","Missed"],["painful","Painful Qs"]].map(([t,l])=>(
-                <button key={t} className={`tab-btn ${analysisTab===t?"active":""}`} onClick={()=>setATab(t)}>{l}</button>
-              ))}
-            </div>
-
-            {/* Overview */}
-            {analysisTab==="overview"&&(
-              <div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
-                  {SUBJECTS.map(s=>(
-                    <div key={s} className="card" style={{padding:12,textAlign:"center"}}>
-                      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",marginBottom:4}}>{s.substring(0,4)}</div>
-                      <div style={{fontSize:22,fontWeight:800,color:analysis.ss[s].correct>0?"#22c55e":"#ef4444"}}>{analysis.ss[s].correct}</div>
-                      <div style={{fontSize:10,color:"#6b7280"}}>/{analysis.ss[s].qs}</div>
-                      <div style={{fontSize:10,color:"#ef4444",marginTop:2}}>✗ {analysis.ss[s].incorrect}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="card" style={{padding:14}}>
-                  <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Subject-wise Breakdown</div>
-                  <ResponsiveContainer width="100%" height={160}>
-                    <BarChart data={SUBJECTS.map(s=>({name:s.substring(0,4),correct:analysis.ss[s].correct,incorrect:analysis.ss[s].incorrect,skipped:analysis.ss[s].skipped}))}>
-                      <XAxis dataKey="name" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/>
-                      <Tooltip contentStyle={{fontSize:11,borderRadius:8}}/>
-                      <Bar dataKey="correct" fill="#22c55e" radius={[4,4,0,0]} name="Correct"/>
-                      <Bar dataKey="incorrect" fill="#ef4444" radius={[4,4,0,0]} name="Wrong"/>
-                      <Bar dataKey="skipped" fill="#94a3b8" radius={[4,4,0,0]} name="Skipped"/>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* Attempt Quality */}
-            {analysisTab==="attempt"&&(
-              <div className="card" style={{padding:16}}>
-                <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Attempt Quality Analysis</div>
-                <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Categorization of your attempt patterns</div>
-                {[["🎯 Perfect",analysis.aq.perfect,"#22c55e","Sahi jawab, sahi time"],["💸 Wasted",analysis.aq.wasted,"#ef4444","Galat + zyada time waste"],["⏰ Overtime",analysis.aq.overtime,"#f59e0b","Sahi but bahut slow"],["🤔 Confused",analysis.aq.confused,"#8b5cf6","Answer change kiya baar baar"]].map(([l,v,c,desc])=>(
-                  <div key={l} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #f8fafc"}}>
-                    <div style={{width:42,height:42,borderRadius:10,background:c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{l.split(" ")[0]}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:13,fontWeight:700}}>{l.split(" ").slice(1).join(" ")}</div>
-                      <div style={{fontSize:11,color:"#6b7280"}}>{desc}</div>
-                    </div>
-                    <div style={{fontSize:26,fontWeight:800,color:c}}>{v}</div>
-                  </div>
-                ))}
-                <div style={{marginTop:14}}>
-                  <ResponsiveContainer width="100%" height={180}>
-                    <PieChart>
-                      <Pie data={[{name:"Perfect",value:analysis.aq.perfect||1},{name:"Wasted",value:analysis.aq.wasted||1},{name:"Overtime",value:analysis.aq.overtime||1},{name:"Confused",value:analysis.aq.confused||1}]} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value">
-                        {["#22c55e","#ef4444","#f59e0b","#8b5cf6"].map((c,i)=><Cell key={i} fill={c}/>)}
-                      </Pie>
-                      <Tooltip contentStyle={{fontSize:11}}/>
-                      <Legend wrapperStyle={{fontSize:11}}/>
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {/* Score Potential */}
-            {analysisTab==="potential"&&(
-              <div>
-                <div className="card" style={{padding:16,marginBottom:12}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Score Potential</div>
-                  <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Galatiyan kam karo → score kitna badhega</div>
-                  <ResponsiveContainer width="100%" height={170}>
-                    <BarChart data={[{n:"Actual",s:analysis.sp.actual},{n:"50% fix",s:analysis.sp.p50},{n:"75% fix",s:analysis.sp.p75},{n:"100% fix",s:analysis.sp.p100}]}>
-                      <XAxis dataKey="n" tick={{fontSize:10}}/><YAxis tick={{fontSize:11}}/>
-                      <Tooltip contentStyle={{fontSize:11,borderRadius:8}}/>
-                      <Bar dataKey="s" radius={[6,6,0,0]} name="Score">
-                        {[0,1,2,3].map(i=><Cell key={i} fill={["#ef4444","#f59e0b","#3b82f6","#22c55e"][i]}/>)}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-                  <StatCard label="Actual Score" value={analysis.sp.actual} color="#ef4444"/>
-                  <StatCard label="Without Negatives" value={analysis.correct*analysis.scheme.correct} color="#22c55e"/>
-                  <StatCard label="Lost to Negatives" value={analysis.negLost} color="#f59e0b"/>
-                  <StatCard label="Max Achievable" value={analysis.sp.p100} color="#2563eb"/>
-                </div>
-                <div className="card" style={{padding:16,background:"#f0fdf4"}}>
-                  <div style={{fontSize:12,fontWeight:700,color:"#166534"}}>🎭 Your Attempt Style</div>
-                  <div style={{fontSize:20,fontWeight:800,color:"#15803d",marginTop:4}}>{analysis.persona}</div>
-                </div>
-              </div>
-            )}
-
-            {/* Question Journey */}
-            {analysisTab==="time"&&(
-              <div>
-                <div className="card" style={{padding:16,marginBottom:12}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Subject Movement</div>
-                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-around"}}>
-                    {[{s:"Mathematics",icon:"📐",qs:analysis.ss.Mathematics.correct+analysis.ss.Mathematics.incorrect},{s:"Physics",icon:"⚛️",qs:analysis.ss.Physics.correct+analysis.ss.Physics.incorrect},{s:"Chemistry",icon:"🧪",qs:analysis.ss.Chemistry.correct+analysis.ss.Chemistry.incorrect}].map((it,i,arr)=>(
-                      <div key={it.s} style={{display:"flex",alignItems:"center",gap:6}}>
-                        <div style={{textAlign:"center"}}>
-                          <div style={{fontSize:28,marginBottom:3}}>{it.icon}</div>
-                          <div style={{fontSize:11,fontWeight:700}}>{it.s.substring(0,4)}</div>
-                          <div style={{fontSize:10,color:"#6b7280"}}>{it.qs} Qs</div>
-                        </div>
-                        {i<arr.length-1&&<div style={{fontSize:18,color:"#9ca3af",marginBottom:14}}>→</div>}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                <div className="card" style={{padding:16}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Question Journey (0–30 min)</div>
-                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
-                    {analysis.qResults.map(q=>(
-                      <div key={q.q} className={`q-badge ${q.result}`} title={`Q${q.q}: ${q.s} – ${q.ch} | ${q.result}`}>{q.q}</div>
-                    ))}
-                  </div>
-                  <div style={{display:"flex",gap:12,marginTop:12,fontSize:11}}>
-                    {[["#dcfce7","#16a34a","✓ Correct"],["#fee2e2","#dc2626","✗ Wrong"],["#f1f5f9","#94a3b8","→ Skipped"]].map(([bg,c,l])=>(
-                      <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
-                        <div style={{width:18,height:18,borderRadius:5,background:bg,color:c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>Q</div>
-                        <span style={{color:"#6b7280"}}>{l}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Chapters */}
-            {analysisTab==="chapters"&&(
-              <div>
-                {SUBJECTS.map(s=>(
-                  <div key={s} className="card" style={{padding:14,marginBottom:12}}>
-                    <div style={{fontSize:14,fontWeight:700,marginBottom:10,color:s==="Mathematics"?"#7c3aed":s==="Physics"?"#0ea5e9":"#059669"}}>
-                      {s} — {analysis.ss[s].correct}/{analysis.ss[s].qs} correct
-                    </div>
-                    {CHAPTERS[s].map((ch,i)=>{
-                      const q=analysis.qResults.find(r=>r.s===s&&r.ch===ch);
-                      if(!q) return null;
-                      return (
-                        <div key={ch} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #f8fafc"}}>
-                          <div style={{fontSize:12,color:"#374151"}}>{ch}</div>
-                          <div style={{fontSize:12,fontWeight:700,color:q.result==="correct"?"#22c55e":q.result==="incorrect"?"#ef4444":"#94a3b8"}}>
-                            {q.result==="correct"?"✓ Correct":q.result==="incorrect"?"✗ Wrong":"— Skip"}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Missed Concepts */}
-            {analysisTab==="missed"&&(
-              <div className="card" style={{padding:16}}>
-                <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>⚠️ Missed Concepts</div>
-                <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>In topics pe revision focus karo</div>
-                {SUBJECTS.map(s=>analysis.missed[s].length>0&&(
-                  <div key={s} style={{marginBottom:16}}>
-                    <div style={{fontSize:13,fontWeight:700,color:s==="Mathematics"?"#7c3aed":s==="Physics"?"#0ea5e9":"#059669",marginBottom:8}}>{s}</div>
-                    {analysis.missed[s].map((ch,i)=>(
-                      <div key={ch} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f8fafc"}}>
-                        <div style={{width:22,height:22,borderRadius:6,background:"#fee2e2",color:"#dc2626",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
-                        <div style={{fontSize:13,color:"#374151"}}>{ch}</div>
-                        <button onClick={()=>{setChatInput(`Explain ${ch} from ${s} — I got it wrong in my test`);setPage("birobrain");}} style={{marginLeft:"auto",background:"#eff6ff",color:"#2563eb",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,fontWeight:600,cursor:"pointer"}}>Revise →</button>
-                      </div>
-                    ))}
-                  </div>
-                ))}
-                {SUBJECTS.every(s=>analysis.missed[s].length===0)&&(
-                  <div style={{textAlign:"center",padding:"24px 0",color:"#6b7280"}}>🎉 Koi missed concept nahi! Great job!</div>
-                )}
-              </div>
-            )}
-
-            {/* Painful Qs */}
-            {analysisTab==="painful"&&(
-              <div className="card" style={{padding:16}}>
-                <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>🔥 Painful Questions</div>
-                <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>In questions ne score sabse zyada harm kiya</div>
-                {analysis.qResults.filter(q=>q.result==="incorrect").map(q=>(
-                  <div key={q.q} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f8fafc"}}>
-                    <div style={{width:32,height:32,borderRadius:8,background:"#fee2e2",color:"#dc2626",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>Q{q.q}</div>
-                    <div style={{flex:1}}>
-                      <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>{q.s} · {q.ch}</div>
-                      <div style={{fontSize:11,color:"#6b7280"}}>Tumne: {q.ua||"—"} | Sahi: {q.ca}</div>
-                    </div>
-                    <div style={{fontSize:12,fontWeight:700,color:"#ef4444"}}>-{analysis.scheme.wrong}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Action btns */}
-            <div style={{marginTop:14,display:"flex",gap:10}}>
-              <button onClick={()=>{setPage("birobrain");setChatInput("Mera latest test analyze karo aur specific improvement advice do.");}} style={{flex:1,background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",border:"none",borderRadius:10,padding:"11px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
-                <Icon name="sparkle" size={15} color="#fff"/> AI Practice
-              </button>
-              <button onClick={()=>setPage("planner")} style={{flex:1,background:"#fff",color:"#2563eb",border:"2px solid #2563eb",borderRadius:10,padding:"11px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13}}>Study Plan</button>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ MY TESTS ═══ */}
-        {page==="tests"&&(
-          <div className="fade-in">
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
-              <div>
-                <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>My Tests</div>
-                <div style={{fontSize:13,color:"#6b7280"}}>{tests.length} tests available</div>
-              </div>
-              <button className="btn-primary" onClick={()=>setPage("external")} style={{padding:"8px 14px",fontSize:13,display:"flex",alignItems:"center",gap:6}}>
-                <Icon name="plus" size={15} color="#fff"/> New
-              </button>
-            </div>
-            {tests.length===0?(
-              <div className="card" style={{padding:32,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:12}}>📄</div>
-                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi test nahi</div>
-                <div style={{fontSize:13,color:"#6b7280",marginTop:4,marginBottom:16}}>Answer key paste karo ya manual test create karo</div>
-                <button className="btn-primary" onClick={()=>setPage("external")}>Create Test</button>
-              </div>
-            ):tests.map(t=>(
-              <div key={t.id} className="card" style={{padding:16,marginBottom:12,cursor:"pointer",transition:"transform .15s"}} onClick={()=>goAnalysis(t)}
-                onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
-                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
-                  <div>
-                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>{t.testName}</div>
-                    <div style={{fontSize:12,color:"#6b7280",marginBottom:6}}>{t.ts}</div>
-                    <div style={{display:"flex",gap:5}}>
-                      {SUBJECTS.map(s=><span key={s} style={{fontSize:10,background:"#f1f5f9",color:"#475569",padding:"2px 8px",borderRadius:20,fontWeight:600}}>{s.substring(0,4)}</span>)}
-                    </div>
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    <div style={{fontSize:10,color:"#6b7280"}}>Best Score</div>
-                    <div style={{fontSize:18,fontWeight:800,color:t.score>0?"#22c55e":"#ef4444"}}>{t.score}/{t.max}</div>
-                    <div style={{fontSize:11,color:"#6b7280"}}>({t.acc}%)</div>
-                  </div>
-                </div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
-                  {[["Questions",t.correct+t.incorrect+t.skipped],["Duration","180 min"],["Marks",t.max]].map(([l,v])=>(
-                    <div key={l} style={{background:"#f8fafc",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
-                      <div style={{fontSize:14,fontWeight:700,color:"#374151"}}>{v}</div>
-                      <div style={{fontSize:10,color:"#9ca3af"}}>{l}</div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* ═══ BIRO-BRAIN AI ═══ */}
-        {page==="birobrain"&&(
-          <div className="fade-in" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 145px)"}}>
-            <div style={{marginBottom:10}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Biro-Brain AI</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>Tera elite JEE/NEET mentor 🧠</div>
-            </div>
-            {!apiKey&&(
-              <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:"10px 14px",marginBottom:10,fontSize:12,color:"#92400e",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-                <span>⚠️ API key set karo AI responses ke liye</span>
-                <button onClick={()=>setPage("settings")} style={{background:"#f59e0b",color:"#fff",border:"none",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Settings</button>
-              </div>
-            )}
-            {analysis&&(
-              <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:11,color:"#1e40af"}}>
-                📊 Context: <strong>{analysis.testName}</strong> · Score: {analysis.score}/{analysis.max} · Acc: {analysis.acc}%
-              </div>
-            )}
-            <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:10,paddingBottom:10,minHeight:0}}>
-              {chatMsgs.map((m,i)=>(
-                <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
-                  <div className={`chat-bubble ${m.role}`} dangerouslySetInnerHTML={{__html:renderMd(m.content)}}/>
-                </div>
-              ))}
-              {chatLoading&&(
-                <div style={{display:"flex"}}>
-                  <div className="chat-bubble assistant" style={{display:"flex",alignItems:"center",gap:5}}>
-                    {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#94a3b8",animation:`pulse 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
-                  </div>
-                </div>
-              )}
-              <div ref={chatEnd}/>
-            </div>
-            <div style={{borderTop:"1px solid #e2e8f0",paddingTop:10}}>
-              <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:8,paddingBottom:4,scrollbarWidth:"none"}}>
-                {["Analyze my test","Generate study plan","Explain missed concept","Strategy tips","Time management"].map(p=>(
-                  <button key={p} onClick={()=>setChatInput(p)} style={{whiteSpace:"nowrap",background:"#fff",border:"1px solid #e2e8f0",borderRadius:20,padding:"4px 11px",fontSize:11,fontWeight:600,color:"#475569",cursor:"pointer",flexShrink:0}}>{p}</button>
-                ))}
-              </div>
-              <div style={{display:"flex",gap:8}}>
-                <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="Doubt pucho ya plan maango..." style={{flex:1,border:"1.5px solid #e2e8f0",borderRadius:10,padding:"10px 14px",fontSize:14,fontFamily:"inherit"}}/>
-                <button onClick={sendChat} disabled={chatLoading} style={{width:42,height:42,background:"#2563eb",color:"#fff",border:"none",borderRadius:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                  <Icon name="send" size={16} color="#fff"/>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ STUDY PLANNER ═══ */}
-        {page==="planner"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Study Planner</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>AI-powered weekly plan based on your performance</div>
-            </div>
-            <button onClick={genPlan} disabled={planLoading} style={{width:"100%",background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",border:"none",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:20,opacity:planLoading?.7:1}}>
-              {planLoading?<><div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Generating...</>:<><Icon name="sparkle" size={18} color="#fff"/> Generate New Plan</>}
-            </button>
-            {plan?(
-              <div className="card" style={{padding:20}}>
-                <div style={{fontSize:14,fontWeight:700,marginBottom:12,color:"#111827"}}>📅 Your 7-Day Quest Plan</div>
-                <div style={{fontSize:13,color:"#374151",lineHeight:1.8}} dangerouslySetInnerHTML={{__html:renderMd(plan)}}/>
-              </div>
-            ):(
-              <div className="card" style={{padding:32,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:12}}>📅</div>
-                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>No Study Plan Yet</div>
-                <div style={{fontSize:13,color:"#6b7280",marginTop:4}}>AI test performance ke basis pe plan banata hai</div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ MISTAKE BOOK ═══ */}
-        {page==="mistakes"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Mistake Book</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>{mistakes.length} questions for revision</div>
-            </div>
-            {mistakes.length===0?(
-              <div className="card" style={{padding:32,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:12}}>📖</div>
-                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi mistake nahi abhi tak</div>
-                <div style={{fontSize:13,color:"#6b7280",marginTop:4}}>Galat answers automatically yahan save hote hain</div>
-              </div>
-            ):(
-              <div>
-                {SUBJECTS.map(s=>{
-                  const sm=mistakes.filter(m=>m.s===s);
-                  if(!sm.length) return null;
-                  return (
-                    <div key={s} className="card" style={{padding:16,marginBottom:12}}>
-                      <div style={{fontSize:14,fontWeight:700,marginBottom:10,color:s==="Mathematics"?"#7c3aed":s==="Physics"?"#0ea5e9":"#059669"}}>{s} ({sm.length})</div>
-                      {sm.slice(0,15).map(m=>(
-                        <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f8fafc"}}>
-                          <div className="q-badge incorrect">Q{m.q}</div>
-                          <div style={{flex:1}}>
-                            <div style={{fontSize:12,fontWeight:600}}>{m.ch}</div>
-                            <div style={{fontSize:11,color:"#6b7280"}}>{m.tn} · {m.date}</div>
-                          </div>
-                          <div style={{fontSize:11,color:"#ef4444",fontWeight:700}}>✗ {m.ua||"–"} | ✓ {m.ca}</div>
-                        </div>
-                      ))}
-                      {sm.length>15&&<div style={{textAlign:"center",padding:"8px 0",fontSize:12,color:"#6b7280"}}>+{sm.length-15} more</div>}
-                    </div>
-                  );
-                })}
-                <button onClick={()=>{setMistakes([]);showToast("Mistake book cleared");}} style={{width:"100%",background:"#fee2e2",color:"#dc2626",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>Clear All Mistakes</button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ═══ GOAL TRACKER ═══ */}
-        {page==="goal"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Goal Tracker</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>Target set karo, progress track karo</div>
-            </div>
-            <div className="card" style={{padding:16,marginBottom:14}}>
-              {[
-                ["Target College","select","college",COLLEGES.map(c=>c.name)],
-                ["Daily Study Hours","number","hours",null],
-                ["Months Remaining","number","months",null],
-              ].map(([label,type,key,opts])=>(
-                <div key={key} style={{marginBottom:14}}>
-                  <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>{label}</label>
-                  {type==="select"?(
-                    <select value={goal[key]||""} onChange={e=>setGoal(p=>({...p,[key]:e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14,background:"#fff"}}>
-                      {opts.map(o=><option key={o} value={o}>{o}</option>)}
-                    </select>
-                  ):(
-                    <input type="number" value={goal[key]||""} onChange={e=>setGoal(p=>({...p,[key]:+e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}}/>
-                  )}
-                </div>
-              ))}
-              <button className="btn-primary" onClick={()=>showToast("Goal saved! 🎯")} style={{width:"100%"}}>Save Goal</button>
-            </div>
-
-            <div className="card" style={{padding:20,background:"linear-gradient(135deg,#eff6ff,#f0fdf4)",marginBottom:14,textAlign:"center"}}>
-              <div style={{fontSize:18,fontWeight:800,color:"#111827",marginBottom:4}}>{goal.college}</div>
-              <div style={{fontSize:13,color:"#6b7280",marginBottom:16}}>Required: {targetCollege.cutoff} marks</div>
-              <div style={{display:"flex",justifyContent:"space-around"}}>
-                <div><div style={{fontSize:12,color:"#6b7280"}}>Your Avg</div><div style={{fontSize:28,fontWeight:900,color:avgScore>0?"#22c55e":"#ef4444"}}>{avgScore}</div></div>
-                <div><div style={{fontSize:12,color:"#6b7280"}}>Target</div><div style={{fontSize:28,fontWeight:900,color:"#2563eb"}}>{targetCollege.cutoff}</div></div>
-                <div><div style={{fontSize:12,color:"#6b7280"}}>Gap</div><div style={{fontSize:28,fontWeight:900,color:"#f59e0b"}}>{marksGap}</div></div>
-              </div>
-            </div>
-
-            {tests.length>0&&(
-              <div className="card" style={{padding:16,marginBottom:14}}>
-                <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Score Trend vs Target</div>
-                <ResponsiveContainer width="100%" height={160}>
-                  <LineChart data={[...tests].reverse().slice(0,10).map((t,i)=>({name:`T${i+1}`,score:t.score,target:targetCollege.cutoff}))}>
-                    <XAxis dataKey="name" tick={{fontSize:10}}/><YAxis tick={{fontSize:10}}/>
-                    <Tooltip contentStyle={{fontSize:11,borderRadius:8}}/>
-                    <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} dot={{r:3}} name="Your Score"/>
-                    <Line type="monotone" dataKey="target" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Target"/>
-                    <Legend wrapperStyle={{fontSize:11}}/>
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-
-            <div className="card" style={{padding:16,background:"#fff7ed",border:"1px solid #fde68a"}}>
-              <div style={{fontSize:13,fontWeight:700,color:"#92400e"}}>⚡ Effort Required</div>
-              <div style={{fontSize:14,color:"#78350f",marginTop:6}}>
-                Daily Target: <strong>{goal.months>0?Math.ceil(marksGap/(goal.months*30)):0} marks/day</strong> improvement with <strong>{goal.hours}h/day</strong> study over <strong>{goal.months} months</strong>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ═══ COMMUNITY ═══ */}
-        {page==="community"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:16}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Community</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>Fellow aspirants se connect karo 🤝</div>
-            </div>
-            <div className="card" style={{padding:14,marginBottom:14}}>
-              <textarea value={postInput} onChange={e=>setPostInput(e.target.value)} rows={3} placeholder="Strategy share karo, doubt pucho..." style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14,resize:"none",marginBottom:10,fontFamily:"inherit"}}/>
-              <button className="btn-primary" onClick={()=>{if(!postInput.trim())return;setPosts(p=>[{id:Date.now(),name:"You",text:postInput,time:"abhi",likes:0},...p]);setPostInput("");}}>Post</button>
-            </div>
-            {posts.map(p=>(
-              <div key={p.id} className="card" style={{padding:14,marginBottom:10}}>
-                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
-                  <div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#2563eb,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700,flexShrink:0}}>{p.name[0].toUpperCase()}</div>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:700}}>{p.name}</div>
-                    <div style={{fontSize:11,color:"#9ca3af"}}>{p.time}</div>
-                  </div>
-                </div>
-                <div style={{fontSize:14,color:"#374151",lineHeight:1.5}}>{p.text}</div>
-                <div style={{marginTop:8,display:"flex",gap:12,fontSize:12,color:"#6b7280"}}>
-                  <button onClick={()=>setPosts(prev=>prev.map(pp=>pp.id===p.id?{...pp,likes:pp.likes+1}:pp))} style={{background:"none",border:"none",cursor:"pointer",color:"#6b7280",fontSize:12,padding:0}}>❤️ {p.likes}</button>
-                </div>
-              </div>
-            ))}
-            <a href="https://t.me/biroskills" target="_blank" rel="noreferrer" style={{display:"block",background:"#0088cc",color:"#fff",borderRadius:10,padding:"12px",textAlign:"center",textDecoration:"none",fontWeight:700,fontSize:14,marginTop:8}}>📱 Join Telegram Community</a>
-          </div>
-        )}
-
-        {/* ═══ HISTORY ═══ */}
-        {page==="history"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Test History</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>{tests.length} completed attempts</div>
-            </div>
-            {tests.length===0?(
-              <div className="card" style={{padding:32,textAlign:"center"}}>
-                <div style={{fontSize:40,marginBottom:12}}>📊</div>
-                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi history nahi</div>
-              </div>
-            ):tests.map(t=>(
-              <div key={t.id} className="card" style={{padding:14,marginBottom:10,cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"transform .15s"}} onClick={()=>goAnalysis(t)}
-                onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
-                <div style={{width:44,height:44,borderRadius:12,background:t.score>0?"#dcfce7":"#fee2e2",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>
-                  {t.score>0?"📈":"📉"}
-                </div>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:700}}>{t.testName}</div>
-                  <div style={{fontSize:11,color:"#6b7280"}}>{t.ts}</div>
-                  <div style={{height:4,borderRadius:2,background:"#f1f5f9",marginTop:5,overflow:"hidden"}}>
-                    <div style={{width:`${Math.max(0,(t.score/t.max)*100)}%`,background:t.score>0?"#22c55e":"#ef4444",height:"100%"}}/>
-                  </div>
-                </div>
-                <div style={{textAlign:"right",flexShrink:0}}>
-                  <div style={{fontSize:16,fontWeight:800,color:t.score>0?"#22c55e":"#ef4444"}}>{t.score}/{t.max}</div>
-                  <div style={{fontSize:11,color:"#6b7280"}}>{t.acc}% acc</div>
-                </div>
-              </div>
-            ))}
-            {tests.length>0&&(
-              <button onClick={()=>{if(confirm("Sab tests delete karna chahte ho?"))setTests([]);}} style={{width:"100%",background:"#fee2e2",color:"#dc2626",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,marginTop:8}}>Clear All History</button>
-            )}
-          </div>
-        )}
-
-        {/* ═══ SETTINGS ═══ */}
-        {page==="settings"&&(
-          <div className="fade-in">
-            <div style={{marginBottom:20}}>
-              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Settings</div>
-              <div style={{fontSize:13,color:"#6b7280"}}>App configure karo</div>
-            </div>
-
-            <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>🔑 Anthropic API Key</div>
-              <div style={{fontSize:12,color:"#6b7280",marginBottom:12}}>Biro-Brain AI aur Study Planner ke liye zaroori hai. Key console.anthropic.com se lo.</div>
-              <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-api03-..." style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14,marginBottom:10}}/>
-              <button className="btn-primary" onClick={()=>{store.set("biro-key",apiKey);showToast("API key saved! ✅");}} style={{width:"100%"}}>Save API Key</button>
-              <div style={{fontSize:11,color:"#6b7280",marginTop:8}}>⚠️ Key browser localStorage mein save hoti hai. Production mein server-side use karo.</div>
-            </div>
-
-            <div className="card" style={{padding:16,marginBottom:14}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>📤 Export / Import Data</div>
-              <div style={{display:"flex",gap:10}}>
-                <button onClick={()=>{const d={tests,mistakes,goal};const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="biro-backup.json";a.click();showToast("Data exported! 📥");}} style={{flex:1,background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>
-                  <Icon name="download" size={14} color="#2563eb"/> Export
-                </button>
-                <label style={{flex:1,background:"#f0fdf4",color:"#15803d",border:"1px solid #bbf7d0",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
-                  📂 Import
-                  <input type="file" accept=".json" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.tests)setTests(d.tests);if(d.mistakes)setMistakes(d.mistakes);if(d.goal)setGoal(d.goal);showToast("Data imported! ✅");}catch{showToast("Invalid file!","error");}};r.readAsText(f);}}/>
-                </label>
-              </div>
-            </div>
-
-            <div className="card" style={{padding:16,background:"#fff5f5"}}>
-              <div style={{fontSize:14,fontWeight:700,marginBottom:4,color:"#dc2626"}}>⚠️ Danger Zone</div>
-              <div style={{fontSize:12,color:"#6b7280",marginBottom:12}}>Ye actions undo nahi ho sakti</div>
-              <button onClick={()=>{if(confirm("Sab data delete karna chahte ho?")){{setTests([]);setMistakes([]);setPlan(null);localStorage.clear();showToast("All data cleared","error")}}}} style={{width:"100%",background:"#fee2e2",color:"#dc2626",border:"1px solid #fca5a5",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>🗑️ Clear All Data</button>
-            </div>
-
-            <div className="card" style={{padding:16,marginTop:14,textAlign:"center"}}>
-              <div style={{fontSize:22,marginBottom:8}}>🚀</div>
-              <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Biro Test v1.0</div>
-              <div style={{fontSize:12,color:"#6b7280",marginTop:4}}>Made with ❤️ for JEE/NEET aspirants</div>
-              <a href="https://t.me/biroskills" target="_blank" rel="noreferrer" style={{display:"inline-block",marginTop:10,color:"#2563eb",fontSize:12,fontWeight:600}}>Join Telegram Community →</a>
-            </div>
-          </div>
-        )}
-
-      </div>{/* end content */}
-
-      {/* BOTTOM NAV */}
-      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#fff",borderTop:"1px solid #e2e8f0",display:"flex",zIndex:50,paddingBottom:"env(safe-area-inset-bottom)"}}>
-        {[["dashboard","Home","dashboard"],["tests","Tests","tests"],["analysis","Analysis","chart"],["birobrain","AI","brain"],["community","Social","community"]].map(([p,l,icon])=>(
-          <button key={p} onClick={()=>{if(p==="analysis"&&!analysis){setPage("external");return;}setPage(p);}} style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"8px 4px 10px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:page===p?"#2563eb":"#9ca3af",fontFamily:"inherit",transition:"color .15s"}}>
-            <Icon name={icon} size={20} color={page===p?"#2563eb":"#9ca3af"}/>
-            <span style={{fontSize:9,fontWeight:page===p?700:500}}>{l}</span>
-          </button>
-        ))}
-      </div>
-
-    </div>
-  );
+// ── UTILS ──
+var _toastT;
+function toast(msg,type){
+  var el=document.getElementById('toast');
+  if(!el)return;
+  el.textContent=msg; el.className='toast '+(type==='e'?'e':type==='i'?'i':'s');
+  el.style.display='block';
+  clearTimeout(_toastT);
+  _toastT=setTimeout(function(){el.style.display='none';},2800);
 }
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+function fmt(s){return ('0'+Math.floor(s/60)).slice(-2)+':'+('0'+(s%60)).slice(-2);}
+
+function parseAns(str){
+  var res={};
+  if(!str||!str.trim())return res;
+  var s=str.trim();
+  if(s.indexOf('-')>-1||s.indexOf(',')>-1){
+    s.split(/[,\n]/).forEach(function(p){
+      var parts=p.trim().split(/[-.\s]+/);
+      if(parts.length>=2){var n=parseInt(parts[0]);var a=parts[parts.length-1].toUpperCase();if(!isNaN(n)&&n>0&&/^[A-D]/.test(a))res[n-1]=a;}
+    });
+  } else {
+    s.replace(/\s/g,'').split('').forEach(function(c,i){if(/[A-Da-d]/.test(c))res[i]=c.toUpperCase();});
+  }
+  return res;
+}
+
+function esc(s){return s?String(s).replace(/[<>&"]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c];}):''}
+
+function mdToHtml(t){
+  if(!t)return '';
+  return t
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`]+)`/g,'<code style="background:#f1f5f9;padding:1px 4px;border-radius:3px;font-size:12px">$1</code>')
+    .replace(/\n/g,'<br>');
+}
+
+function pct(v,mx){return mx?Math.max(0,Math.round((v/mx)*100)):0;}
+
+// ── ANALYSIS ──
+function genAnalysis(ua,ka,cS,wS,name){
+  var correct=0,incorrect=0,skipped=0;
+  var ss={Mathematics:{correct:0,incorrect:0,skipped:0,qs:25},Physics:{correct:0,incorrect:0,skipped:0,qs:25},Chemistry:{correct:0,incorrect:0,skipped:0,qs:25}};
+  var missed={Mathematics:[],Physics:[],Chemistry:[]};
+  var qR=[];
+  for(var i=0;i<75;i++){
+    var s=i<25?'Mathematics':i<50?'Physics':'Chemistry';
+    var ch=CH[s][i%CH[s].length];
+    var u=ua[i]||null;
+    var ca=ka[i]||['A','B','C','D'][Math.floor(Math.random()*4)];
+    var r=u?(u===ca?'correct':'incorrect'):'skipped';
+    if(r==='correct'){correct++;ss[s].correct++;}
+    else if(r==='incorrect'){incorrect++;ss[s].incorrect++;if(missed[s].indexOf(ch)<0)missed[s].push(ch);}
+    else{skipped++;ss[s].skipped++;}
+    qR.push({q:i+1,s:s,ch:ch,r:r,u:u,ca:ca});
+  }
+  var score=correct*cS-incorrect*wS;
+  var max=75*cS;
+  var acc=correct+incorrect>0?Math.round(correct/(correct+incorrect)*100):0;
+  var personas=['The Gambler 🎲','The Safe Player 🛡️','The Speedster ⚡','The Overthinker 🤔','The Wild Card 🃏','The Sniper 🎯'];
+  return {
+    id:Date.now(),name:esc(name),score:score,max:max,acc:acc,correct:correct,incorrect:incorrect,skipped:skipped,cS:cS,wS:wS,
+    ss:ss,missed:missed,qR:qR,
+    aq:{perfect:correct,wasted:Math.round(incorrect*.6),overtime:Math.round(correct*.2),confused:Math.round(incorrect*.15)},
+    sp:{actual:score,p50:score+Math.round(incorrect*.5*cS),p75:score+Math.round(incorrect*.75*cS),p100:score+incorrect*cS},
+    persona:personas[Math.floor(Math.random()*personas.length)],
+    negLost:incorrect*wS,
+    ts:new Date().toLocaleDateString('en-IN'),
+  };
+}
+
+// ── AI API ──
+async function callAI(msgs){
+  var key=S.key||localStorage.getItem('biro-key')||'';
+  if(!key) throw new Error('API key set karo Settings mein');
+  var ctx=S.cur;
+  var sys='You are "Biro-Brain", elite AI Mentor for JEE/NEET aspirants. Be energetic, data-driven, direct like an IIT alumnus coach.\n'+(ctx?'Test context: Score '+ctx.score+'/'+ctx.max+', Accuracy '+ctx.acc+'%, Missed: '+JSON.stringify(ctx.missed)+'\n':'')+'Rules: concise bullets, bold key terms, gamify (quests/boss raids/leveling up), LaTeX for math, no generic quotes, hint first for doubts, be brutally honest.';
+  var apiMsgs=msgs.filter(function(m){return m.r!=='ai'||msgs.indexOf(m)===0?true:true;}).map(function(m){return {role:m.r==='ai'?'assistant':'user',content:m.c.replace(/<[^>]+>/g,'').substring(0,500)};});
+  var resp=await fetch('https://api.anthropic.com/v1/messages',{
+    method:'POST',
+    headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,system:sys,messages:apiMsgs}),
+  });
+  var d=await resp.json();
+  if(d.error)throw new Error(d.error.message||'API error');
+  return d.content&&d.content[0]&&d.content[0].text||'No response';
+}
+
+// ── DRAWER / NAV ──
+function toggleDrawer(){
+  var ov=document.getElementById('dov'),dr=document.getElementById('drw');
+  var open=dr.classList.contains('open');
+  if(open){dr.classList.remove('open');ov.classList.remove('open');}
+  else{dr.classList.add('open');ov.classList.add('open');}
+}
+
+function renderNav(){
+  var nl=document.getElementById('nav-links');
+  if(nl) nl.innerHTML=NAV.map(function(n){
+    return '<div class="nav-item '+(S.page===n.id?'active':'')+'" onclick="go(\''+n.id+'\');toggleDrawer()">'+n.e+' '+n.lbl+'</div>';
+  }).join('');
+
+  var bn=document.getElementById('bnav');
+  if(bn) bn.innerHTML=[
+    {id:'dashboard',lbl:'Home',e:'🏠'},
+    {id:'tests',lbl:'Tests',e:'📄'},
+    {id:'analysis',lbl:'Analysis',e:'📊'},
+    {id:'birobrain',lbl:'AI',e:'🧠'},
+    {id:'community',lbl:'Social',e:'👥'},
+  ].map(function(n){
+    var active=(S.page===n.id)||(n.id==='analysis'&&S.page==='analysis');
+    return '<button class="bnav-btn '+(active?'active':'')+'" onclick="bClick(\''+n.id+'\')">'
+      +'<span style="font-size:18px">'+n.e+'</span>'+n.lbl+'</button>';
+  }).join('');
+}
+
+function bClick(id){
+  if(id==='analysis'){go(S.cur?'analysis':'external');}
+  else{go(id);}
+}
+
+// ── ROUTER ──
+function go(id){
+  S.page=id;
+  renderNav();
+  var c=document.getElementById('pg');
+  if(!c)return;
+  var fns={
+    dashboard:pgDashboard,tests:pgTests,external:pgExternal,analysis:pgAnalysis,
+    birobrain:pgChat,planner:pgPlanner,mistakes:pgMistakes,goal:pgGoal,
+    community:pgCommunity,history:pgHistory,settings:pgSettings,
+  };
+  c.innerHTML='<div class="page">'+(fns[id]?fns[id]():pgDashboard())+'</div>';
+  if(id==='birobrain')renderChatMsgs();
+  window.scrollTo(0,0);
+}
+
+// ── HELPERS ──
+function sc(label,val,color,sub){
+  return '<div class="sc"><div class="sl">'+label+'</div><div class="sv" style="color:'+color+'">'+val+'</div>'+(sub?'<div style="font-size:10px;color:#9ca3af">'+sub+'</div>':'')+'</div>';
+}
+
+function barChart(vals,labels,colors){
+  var max=Math.max.apply(null,vals)||1;
+  return '<div style="display:flex;align-items:flex-end;gap:8px;height:110px;padding:0 4px">'
+    +vals.map(function(v,i){
+      var h=Math.max(4,Math.round((v/max)*95));
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<div style="font-size:11px;font-weight:700;color:'+colors[i]+'">'+v+'</div>'
+        +'<div style="width:100%;background:'+colors[i]+';border-radius:5px 5px 0 0;height:'+h+'px"></div>'
+        +'<div style="font-size:10px;color:var(--sub)">'+labels[i]+'</div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+function multiBarChart(groups){
+  var all=[];
+  groups.forEach(function(g){g.bars.forEach(function(b){all.push(b.v);});});
+  var max=Math.max.apply(null,all)||1;
+  return '<div style="display:flex;align-items:flex-end;gap:6px;height:110px">'
+    +groups.map(function(g){
+      return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px">'
+        +'<div style="display:flex;align-items:flex-end;gap:2px;width:100%">'
+        +g.bars.map(function(b){var h=Math.max(3,Math.round((b.v/max)*95));return '<div style="flex:1;background:'+b.c+';border-radius:4px 4px 0 0;height:'+h+'px"></div>';}).join('')
+        +'</div><div style="font-size:10px;color:var(--sub)">'+g.lbl+'</div>'
+        +'</div>';
+    }).join('')+'</div>';
+}
+
+// ── MONITOR ──
+async function startMon(){
+  try{var stream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});window._ms=stream;}catch(e){}
+  S.mon=true;S.monT=0;
+  S.monInt=setInterval(function(){
+    S.monT++;
+    var el=document.getElementById('rec-time');if(el)el.textContent=fmt(S.monT);
+    var el2=document.getElementById('rec-time-ext');if(el2)el2.textContent=fmt(S.monT);
+  },1000);
+  document.getElementById('rec-badge').style.display='flex';
+  toast('Monitor started 🔴');
+  go('external');
+}
+
+function stopMon(){
+  if(window._ms){window._ms.getTracks().forEach(function(t){t.stop();});window._ms=null;}
+  clearInterval(S.monInt);S.mon=false;
+  document.getElementById('rec-badge').style.display='none';
+  toast('Session ended – '+fmt(S.monT));
+  S.monT=0;go('external');
+}
+
+// ── GENERATE ──
+function doGen(){
+  var key=document.getElementById('ek').value;
+  var ans=document.getElementById('ea').value;
+  var name=document.getElementById('en').value||'My Test';
+  var cS=parseInt(document.getElementById('sc').value)||4;
+  var wS=parseInt(document.getElementById('sw').value)||1;
+  if(!key.trim()){toast('Answer key daalo!','e');return;}
+  var ua=parseAns(ans),ka=parseAns(key);
+  var a=genAnalysis(ua,ka,cS,wS,name);
+  var newMb=S.mb.concat(a.qR.filter(function(q){return q.r==='incorrect';}).map(function(q){return {q:q.q,s:q.s,ch:q.ch,r:q.r,u:q.u,ca:q.ca,date:a.ts,tn:a.name,id:a.id+'-'+q.q};})).slice(-300);
+  S.mb=newMb;lsSave('biro-mb',newMb);
+  S.tests=[a].concat(S.tests);lsSave('biro-tests',S.tests);
+  S.cur=a;lsSave('biro-cur',a);
+  S.atab='overview';
+  toast('Analysis ready! 🎉');
+  go('analysis');
+}
+
+// ── CHAT ──
+function renderChatMsgs(){
+  var w=document.getElementById('chat-msgs');
+  if(!w)return;
+  var html=S.chat.map(function(m){
+    return '<div style="display:flex;justify-content:'+(m.r==='user'?'flex-end':'flex-start')+'">'
+      +'<div class="bubble '+(m.r==='user'?'user':'ai')+'">'+(m.r==='user'?esc(m.c):m.c)+'</div></div>';
+  }).join('');
+  if(S.chatLoading){
+    html+='<div style="display:flex"><div class="bubble ai" style="display:flex;align-items:center;gap:5px">'
+      +'<span class="tdot" style="animation-delay:0s"></span><span class="tdot" style="animation-delay:.2s"></span><span class="tdot" style="animation-delay:.4s"></span>'
+      +'</div></div>';
+  }
+  html+='<div id="chat-end"></div>';
+  w.innerHTML=html;
+  setTimeout(function(){var e=document.getElementById('chat-end');if(e)e.scrollIntoView({behavior:'smooth'});},50);
+}
+
+async function sendChat(){
+  var inp=document.getElementById('ci');
+  if(!inp||!inp.value.trim()||S.chatLoading)return;
+  var msg=inp.value.trim();inp.value='';
+  S.chat.push({r:'user',c:msg});
+  S.chatLoading=true;renderChatMsgs();
+  try{
+    var res=await callAI(S.chat);
+    S.chat.push({r:'ai',c:mdToHtml(res)});
+  }catch(e){
+    S.chat.push({r:'ai',c:'❌ <b>Error:</b> '+esc(e.message)});
+  }
+  S.chatLoading=false;renderChatMsgs();
+}
+
+function setChipMsg(msg){var el=document.getElementById('ci');if(el){el.value=msg;el.focus();}}
+
+async function genPlan(){
+  var btn=document.getElementById('gpbtn');
+  if(btn){btn.disabled=true;btn.innerHTML='<span class="spin-loader"></span> Generating...';}
+  var ctx=S.cur?'Missed: '+JSON.stringify(S.cur.missed)+', Score: '+S.cur.score+'/'+S.cur.max:'Target: '+S.goal.college;
+  try{
+    var res=await callAI([{r:'user',c:'Generate a detailed 7-day JEE/NEET study plan. Context: '+ctx+'. Target: '+S.goal.college+'. Hours/day: '+S.goal.hours+'. Use RPG format: day titles, Daily Quests, Boss Raid (hardest missed topic), XP Reward. Be specific and actionable.'}]);
+    S.plan=res;localStorage.setItem('biro-plan',res);
+    toast('Study plan ready! 📅');go('planner');
+  }catch(e){
+    toast(esc(e.message),'e');
+    if(btn){btn.disabled=false;btn.innerHTML='✨ Generate New Plan';}
+  }
+}
+
+// ── PAGES ──
+function pgDashboard(){
+  var t=S.tests;
+  var avgAcc=t.length?Math.round(t.reduce(function(a,tt){return a+(tt.acc||0);},0)/t.length):0;
+  var avgScore=t.length?Math.round(t.reduce(function(a,tt){return a+(tt.score||0);},0)/t.length):0;
+  var tc=COLLEGES.filter(function(c){return c.n===S.goal.college;})[0]||COLLEGES[0];
+  var gap=Math.max(0,tc.c-avgScore);
+  var trendHtml='';
+  if(t.length>1){
+    var recent=t.slice(0,8).reverse();
+    trendHtml='<div class="card cp" style="margin-top:12px"><div style="font-size:14px;font-weight:700;margin-bottom:10px">📈 Score Trend</div>'
+      +barChart(recent.map(function(tt){return tt.score<0?0:tt.score;}),recent.map(function(_,i){return 'T'+(i+1);}),recent.map(function(tt){return tt.score>0?'#22c55e':'#ef4444';}))+'</div>';
+  }
+  return '<div class="sec-t">Dashboard</div><div class="sec-s">Welcome back, aspirant ⚡</div>'
+    +'<div class="sg">'+sc('Avg Accuracy',avgAcc+'%',avgAcc>50?'#22c55e':'#ef4444')+sc('Avg Score',avgScore>0?'+'+avgScore:avgScore,'#2563eb','/'+(t[0]?t[0].max:300))+sc('Tests',t.length,'#7c3aed')+'</div>'
+    +'<div class="card cp" style="margin-bottom:12px;background:linear-gradient(135deg,#eff6ff,#f0fdf4)">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between">'
+        +'<div><div style="font-size:10px;color:var(--sub);font-weight:700;text-transform:uppercase">Your Target 🎯</div><div style="font-size:16px;font-weight:800;margin-top:3px">'+S.goal.college+'</div><div style="font-size:12px;color:var(--sub)">Cutoff: '+tc.c+' marks</div></div>'
+        +'<div style="text-align:center"><div style="font-size:34px;font-weight:900;color:'+(gap>0?'#ef4444':'#22c55e')+';line-height:1">'+gap+'</div><div style="font-size:10px;color:var(--sub)">marks gap</div></div>'
+      +'</div></div>'
+    +'<div style="font-size:11px;font-weight:700;color:#374151;margin-bottom:9px;text-transform:uppercase;letter-spacing:.5px">Quick Actions</div>'
+    +'<div class="g2" style="margin-bottom:14px">'
+      +[{lbl:'External Analysis',e:'🔍',p:'external'},{lbl:'Biro-Brain AI',e:'🧠',p:'birobrain'},{lbl:'Mistake Book',e:'📖',p:'mistakes'},{lbl:'Goal Tracker',e:'🎯',p:'goal'}].map(function(a){
+        return '<div onclick="go(\''+a.p+'\')" class="card cp" style="cursor:pointer;display:flex;align-items:center;gap:9px">'
+          +'<div style="font-size:26px">'+a.e+'</div>'
+          +'<div style="font-size:13px;font-weight:600;color:#374151">'+a.lbl+'</div></div>';
+      }).join('')
+    +'</div>'
+    +trendHtml
+    +(!t.length?'<div class="card cp" style="text-align:center;padding:28px"><div style="font-size:40px;margin-bottom:10px">📊</div><div style="font-size:15px;font-weight:700">Koi test nahi abhi</div><div style="font-size:13px;color:var(--sub);margin:6px 0 14px">Pehla analysis generate karo</div><button class="btn btn-p" onclick="go(\'external\')">Start Analysis →</button></div>':'');
+}
+
+function pgTests(){
+  var t=S.tests;
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div class="sec-t">My Tests</div><div style="font-size:13px;color:var(--sub)">'+t.length+' tests</div></div>'
+    +'<button class="btn btn-p" style="padding:8px 14px;font-size:13px" onclick="go(\'external\')">+ New</button></div>'
+    +(t.length?t.map(function(tt){
+      return '<div class="card cp" style="margin-bottom:10px;cursor:pointer" onclick="openTest('+tt.id+')">'
+        +'<div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px">'
+          +'<div><div style="font-size:15px;font-weight:700">'+tt.name+'</div><div style="font-size:12px;color:var(--sub);margin:3px 0 6px">'+tt.ts+'</div>'
+            +'<div style="display:flex;gap:5px">'+SUBJ.map(function(s){return '<span class="chip">'+s.substring(0,4)+'</span>';}).join('')+'</div></div>'
+          +'<div style="text-align:right"><div style="font-size:18px;font-weight:800;color:'+(tt.score>0?'#22c55e':'#ef4444')+'">'+tt.score+'/'+tt.max+'</div><div style="font-size:11px;color:var(--sub)">'+tt.acc+'% acc</div></div>'
+        +'</div>'
+        +'<div class="g3">'
+          +[['Questions',tt.correct+tt.incorrect+tt.skipped],['Duration','180m'],['Marks',tt.max]].map(function(x){return '<div style="background:#f8fafc;border-radius:8px;padding:6px;text-align:center"><div style="font-size:14px;font-weight:700">'+x[1]+'</div><div style="font-size:10px;color:#9ca3af">'+x[0]+'</div></div>';}).join('')
+        +'</div></div>';
+    }).join(''):'<div class="card cp" style="text-align:center;padding:28px"><div style="font-size:38px;margin-bottom:10px">📄</div><div style="font-size:15px;font-weight:700">Koi test nahi</div><div style="font-size:13px;color:var(--sub);margin:6px 0 14px">Answer key paste karo</div><button class="btn btn-p" onclick="go(\'external\')">Create Test</button></div>');
+}
+
+function openTest(id){
+  var t=null;
+  S.tests.forEach(function(tt){if(tt.id===id)t=tt;});
+  if(t){S.cur=t;lsSave('biro-cur',t);S.atab='overview';go('analysis');}
+}
+
+function pgExternal(){
+  return '<div class="sec-t">External Analysis</div><div class="sec-s">Kisi bhi platform ka test analyze karo</div>'
+    +'<div class="card cp" style="margin-bottom:12px;border:'+(S.mon?'2px solid #f59e0b':'1px solid var(--border)')+';background:'+(S.mon?'#fffbeb':'#fff')+'">'
+      +'<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><span style="font-size:22px">🖥️</span><div><div style="font-size:14px;font-weight:700">Screen Monitor</div><div style="font-size:12px;color:var(--sub)">Dusre platform pe test monitor karo</div></div></div>'
+      +(S.mon?
+        '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px"><span class="rec"></span><span style="font-size:14px;font-weight:700;color:#dc2626">Recording — <span id="rec-time-ext">'+fmt(S.monT)+'</span></span></div>'
+        +'<div class="g3" style="margin-bottom:12px">'+[['Switches',Math.floor(S.monT/120)],['Est Qs',Math.floor(S.monT/30)],['Reviews',Math.floor(S.monT/90)]].map(function(x){return '<div style="background:#fff;border-radius:8px;padding:8px;text-align:center;border:1px solid #fde68a"><div style="font-size:18px;font-weight:800;color:#f59e0b">'+x[1]+'</div><div style="font-size:10px;color:var(--sub)">'+x[0]+'</div></div>';}).join('')+'</div>'
+        +'<button class="btn btn-d btn-w" onclick="stopMon()">■ Stop Monitor</button>'
+        :'<button class="btn btn-w" style="background:#f59e0b;color:#fff" onclick="startMon()">▶ Start Monitor Session</button>')
+    +'</div>'
+    +'<div class="card cp">'
+      +'<div style="font-size:14px;font-weight:700;margin-bottom:14px">✨ Generate Deep Analysis</div>'
+      +'<div style="margin-bottom:12px"><label>Test Name</label><input id="en" value="My Test" placeholder="e.g. QFT-01 Paper"/></div>'
+      +'<div class="g2" style="margin-bottom:12px"><div><label>Correct (+)</label><input id="sc" type="number" value="4"/></div><div><label>Wrong (−)</label><input id="sw" type="number" value="1"/></div></div>'
+      +'<div style="margin-bottom:12px"><label>Answer Key <span style="font-weight:400;color:var(--sub)">(1-A,2-B... ya ABCD...)</span></label><textarea id="ek" rows="3" placeholder="1-A, 2-B, 3-C..."></textarea></div>'
+      +'<div style="margin-bottom:16px"><label>Tumhare Answers <span style="font-weight:400;color:var(--sub)">(blank=skipped)</span></label><textarea id="ea" rows="3" placeholder="1-B, 2-A, 3-D..."></textarea></div>'
+      +'<button class="btn btn-g btn-w" style="font-size:15px;padding:13px" onclick="doGen()">✨ Generate Analysis</button>'
+    +'</div>';
+}
+
+function pgAnalysis(){
+  if(!S.cur)return '<div class="card cp" style="text-align:center;padding:28px"><div style="font-size:38px;margin-bottom:10px">📊</div><div style="font-size:15px;font-weight:700">Koi analysis nahi</div><div style="font-size:13px;color:var(--sub);margin:6px 0 14px">Pehle test generate karo</div><button class="btn btn-p" onclick="go(\'external\')">Generate Analysis</button></div>';
+  var a=S.cur;
+  var tab=S.atab;
+  var tabHtml='';
+
+  if(tab==='overview'){
+    tabHtml='<div class="g3" style="margin-bottom:12px">'
+      +SUBJ.map(function(s){return '<div class="card cp" style="text-align:center;padding:12px"><div style="font-size:10px;font-weight:700;color:var(--sub);margin-bottom:4px">'+s.substring(0,4)+'</div><div style="font-size:22px;font-weight:800;color:'+(a.ss[s].correct>0?'#22c55e':'#ef4444')+'">'+a.ss[s].correct+'</div><div style="font-size:10px;color:var(--sub)">/'+a.ss[s].qs+'</div><div style="font-size:10px;color:#ef4444">✗'+a.ss[s].incorrect+'</div></div>';}).join('')
+    +'</div>'
+    +'<div class="card cp"><div style="font-size:13px;font-weight:700;margin-bottom:10px">Subject Breakdown</div>'
+      +multiBarChart(SUBJ.map(function(s){return {lbl:s.substring(0,4),bars:[{v:a.ss[s].correct,c:'#22c55e'},{v:a.ss[s].incorrect,c:'#ef4444'},{v:a.ss[s].skipped,c:'#94a3b8'}]};}))
+      +'<div style="display:flex;gap:10px;margin-top:8px;font-size:11px">'+[['#22c55e','Correct'],['#ef4444','Wrong'],['#94a3b8','Skip']].map(function(x){return '<div style="display:flex;align-items:center;gap:3px"><div style="width:8px;height:8px;border-radius:2px;background:'+x[0]+'"></div><span style="color:var(--sub)">'+x[1]+'</span></div>';}).join('')+'</div>'
+    +'</div>';
+  }
+  else if(tab==='attempt'){
+    tabHtml='<div class="card cp"><div style="font-size:14px;font-weight:700;margin-bottom:4px">Attempt Quality</div><div style="font-size:12px;color:var(--sub);margin-bottom:14px">Attempt patterns ka breakdown</div>'
+      +[['🎯','Perfect',a.aq.perfect,'#22c55e','Sahi jawab, sahi time'],['💸','Wasted',a.aq.wasted,'#ef4444','Galat + zyada time'],['⏰','Overtime',a.aq.overtime,'#f59e0b','Sahi but bahut slow'],['🤔','Confused',a.aq.confused,'#8b5cf6','Bar bar change kiya']].map(function(x){
+        return '<div class="li"><div style="width:40px;height:40px;border-radius:10px;background:'+x[3]+'18;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+x[0]+'</div><div style="flex:1"><div style="font-size:13px;font-weight:700">'+x[1]+'</div><div style="font-size:11px;color:var(--sub)">'+x[4]+'</div></div><div style="font-size:26px;font-weight:800;color:'+x[3]+'">'+x[2]+'</div></div>';
+      }).join('')+'</div>';
+  }
+  else if(tab==='potential'){
+    tabHtml='<div class="card cp" style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;margin-bottom:4px">Score Potential</div><div style="font-size:12px;color:var(--sub);margin-bottom:14px">Galatiyan kam karo → score badhega</div>'
+      +barChart([a.sp.actual<0?0:a.sp.actual,a.sp.p50,a.sp.p75,a.sp.p100],['Actual','50%','75%','100%'],['#ef4444','#f59e0b','#3b82f6','#22c55e'])
+    +'</div>'
+    +'<div class="g2" style="margin-bottom:12px">'+sc('Actual',a.sp.actual,'#ef4444')+sc('No Neg',a.correct*a.cS,'#22c55e')+sc('Lost',a.negLost,'#f59e0b')+sc('Max',a.sp.p100,'#2563eb')+'</div>'
+    +'<div class="card cp" style="background:#f0fdf4"><div style="font-size:12px;font-weight:700;color:#166534">🎭 Attempt Style</div><div style="font-size:20px;font-weight:800;color:#15803d;margin-top:4px">'+a.persona+'</div></div>';
+  }
+  else if(tab==='time'){
+    tabHtml='<div class="card cp" style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;margin-bottom:12px">Subject Movement</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-around">'
+        +[{s:'Mathematics',e:'📐'},{s:'Physics',e:'⚛️'},{s:'Chemistry',e:'🧪'}].map(function(it,i,arr){
+          var q=a.ss[it.s].correct+a.ss[it.s].incorrect;
+          return '<div style="display:flex;align-items:center;gap:5px">'
+            +'<div style="text-align:center"><div style="font-size:26px;margin-bottom:2px">'+it.e+'</div><div style="font-size:11px;font-weight:700">'+it.s.substring(0,4)+'</div><div style="font-size:10px;color:var(--sub)">'+q+' Qs</div></div>'
+            +(i<arr.length-1?'<div style="font-size:18px;color:#9ca3af;margin-bottom:12px">→</div>':'')
+            +'</div>';
+        }).join('')
+      +'</div></div>'
+    +'<div class="card cp"><div style="font-size:14px;font-weight:700;margin-bottom:10px">Question Journey</div>'
+      +'<div style="display:flex;flex-wrap:wrap;gap:5px">'
+        +a.qR.map(function(q){return '<div class="qb '+q.r+'" title="Q'+q.q+': '+q.s+' – '+q.ch+'">'+q.q+'</div>';}).join('')
+      +'</div>'
+      +'<div style="display:flex;gap:12px;margin-top:10px;font-size:11px">'
+        +[['correct','✓ Correct'],['incorrect','✗ Wrong'],['skipped','→ Skip']].map(function(x){return '<div style="display:flex;align-items:center;gap:3px"><div class="qb '+x[0]+'" style="width:20px;height:20px;font-size:9px">Q</div><span style="color:var(--sub)">'+x[1]+'</span></div>';}).join('')
+      +'</div></div>';
+  }
+  else if(tab==='missed'){
+    var hasMissed=SUBJ.some(function(s){return a.missed[s].length>0;});
+    tabHtml='<div class="card cp"><div style="font-size:14px;font-weight:700;margin-bottom:4px">⚠️ Missed Concepts</div><div style="font-size:12px;color:var(--sub);margin-bottom:14px">In topics pe revision karo</div>'
+      +(hasMissed?SUBJ.map(function(s){
+        if(!a.missed[s].length)return '';
+        return '<div style="margin-bottom:14px"><div style="font-size:13px;font-weight:700;color:'+(s==='Mathematics'?'#7c3aed':s==='Physics'?'#0ea5e9':'#059669')+';margin-bottom:8px">'+s+'</div>'
+          +a.missed[s].map(function(ch,i){
+            return '<div class="li"><div style="width:22px;height:22px;border-radius:6px;background:#fee2e2;color:#dc2626;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+(i+1)+'</div><div style="font-size:13px;flex:1">'+esc(ch)+'</div>'
+              +'<button onclick="setChipMsg(\'Explain '+ch.replace(/'/g,'')+' from '+s+', I got it wrong\');go(\'birobrain\')" style="background:#eff6ff;color:var(--blue);border:none;border-radius:6px;padding:4px 9px;font-size:11px;font-weight:600;cursor:pointer;flex-shrink:0">Revise →</button></div>';
+          }).join('')
+        +'</div>';
+      }).join(''):'<div style="text-align:center;padding:20px;color:var(--sub)">🎉 Koi missed concept nahi!</div>')
+    +'</div>';
+  }
+  else if(tab==='painful'){
+    var wrong=a.qR.filter(function(q){return q.r==='incorrect';});
+    tabHtml='<div class="card cp"><div style="font-size:14px;font-weight:700;margin-bottom:4px">🔥 Painful Questions</div><div style="font-size:12px;color:var(--sub);margin-bottom:14px">In questions ne score harm kiya</div>'
+      +wrong.map(function(q){
+        return '<div class="li"><div style="width:32px;height:32px;border-radius:8px;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0">Q'+q.q+'</div>'
+          +'<div style="flex:1"><div style="font-size:12px;font-weight:600">'+q.s+' · '+esc(q.ch)+'</div><div style="font-size:11px;color:var(--sub)">Tumne: '+(q.u||'—')+' | Sahi: '+q.ca+'</div></div>'
+          +'<div style="font-size:12px;font-weight:700;color:#ef4444;flex-shrink:0">-'+a.wS+'</div></div>';
+      }).join('')
+    +'</div>';
+  }
+
+  return '<div style="margin-bottom:12px"><div style="font-size:18px;font-weight:800;font-family:\'Space Grotesk\',sans-serif">'+a.name+'</div><div style="font-size:12px;color:var(--sub)">Attempt #1 · '+a.ts+'</div></div>'
+    +'<div class="sg">'+sc('Score',a.score,a.score>0?'#2563eb':'#ef4444','/'+a.max)+sc('Accuracy',a.acc+'%',a.acc>50?'#22c55e':'#ef4444')+'</div>'
+    +'<div class="sg">'+sc('Correct ✓',a.correct,'#22c55e','+'+a.correct*a.cS)+sc('Wrong ✗',a.incorrect,'#ef4444','-'+a.incorrect*a.wS)+sc('Skipped',a.skipped,'#94a3b8')+'</div>'
+    +'<div class="card cp" style="margin-bottom:12px"><div style="font-size:12px;font-weight:700;margin-bottom:7px">Overall Performance</div>'
+      +'<div class="prog-bar"><div style="width:'+pct(a.correct,75)+'%;background:#22c55e;height:100%"></div><div style="width:'+pct(a.incorrect,75)+'%;background:#ef4444;height:100%"></div></div>'
+      +'<div style="display:flex;gap:12px;margin-top:6px;font-size:11px">'+[['#22c55e','Correct',a.correct],['#ef4444','Wrong',a.incorrect],['#94a3b8','Skip',a.skipped]].map(function(x){return '<div style="display:flex;align-items:center;gap:3px"><div style="width:8px;height:8px;border-radius:2px;background:'+x[0]+'"></div><span style="color:var(--sub)">'+x[1]+' ('+x[2]+')</span></div>';}).join('')+'</div>'
+    +'</div>'
+    +'<div class="tabs">'+[['overview','Overview'],['attempt','Attempt'],['potential','Potential'],['time','Journey'],['missed','Missed'],['painful','Painful Qs']].map(function(x){return '<button class="tab '+(tab===x[0]?'active':'')+'" onclick="switchTab(\''+x[0]+'\')">'+x[1]+'</button>';}).join('')+'</div>'
+    +tabHtml
+    +'<div style="display:flex;gap:10px;margin-top:14px">'
+      +'<button class="btn btn-g btn-w" onclick="setChipMsg(\'Mera latest test analyze karo aur specific improvement advice do\');go(\'birobrain\')">🧠 AI Practice</button>'
+      +'<button class="btn btn-o btn-w" onclick="go(\'planner\')">📅 Study Plan</button>'
+    +'</div>';
+}
+
+function switchTab(t){S.atab=t;go('analysis');}
+
+function pgChat(){
+  return '<div style="margin-bottom:10px"><div class="sec-t">Biro-Brain AI</div><div style="font-size:13px;color:var(--sub)">Tera elite JEE/NEET mentor 🧠</div></div>'
+    +(!S.key?'<div style="background:#fef3c7;border:1px solid #fde68a;border-radius:9px;padding:9px 12px;margin-bottom:10px;font-size:12px;color:#92400e;display:flex;align-items:center;justify-content:space-between;gap:8px">⚠️ API key set karo <button class="btn btn-p" style="padding:4px 10px;font-size:11px" onclick="go(\'settings\')">Settings</button></div>':'')
+    +(S.cur?'<div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:9px;padding:8px 12px;margin-bottom:10px;font-size:11px;color:#1e40af">📊 <b>'+S.cur.name+'</b> · Score: '+S.cur.score+'/'+S.cur.max+' · Acc: '+S.cur.acc+'%</div>':'')
+    +'<div style="height:calc(100vh - 300px);min-height:280px;display:flex;flex-direction:column">'
+      +'<div id="chat-msgs" class="chat-wrap"></div>'
+    +'</div>'
+    +'<div style="border-top:1px solid var(--border);padding-top:10px;background:#f1f5f9;margin:0 -14px -14px;padding:10px 14px">'
+      +'<div style="display:flex;gap:5px;overflow-x:auto;margin-bottom:8px;scrollbar-width:none">'
+        +['Analyze my test','Study plan banao','Missed concept explain karo','Time strategy','Mock test tips'].map(function(p){return '<button onclick="setChipMsg(\''+p+'\')" style="white-space:nowrap;background:#fff;border:1px solid var(--border);border-radius:20px;padding:4px 11px;font-size:11px;font-weight:600;color:#475569;cursor:pointer;flex-shrink:0">'+p+'</button>';}).join('')
+      +'</div>'
+      +'<div style="display:flex;gap:8px">'
+        +'<input id="ci" placeholder="Doubt pucho ya plan maango..." style="flex:1" onkeydown="if(event.key===\'Enter\'&&!event.shiftKey){event.preventDefault();sendChat();}"/>'
+        +'<button onclick="sendChat()" style="width:42px;height:42px;background:var(--blue);color:#fff;border:none;border-radius:10px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:18px">➤</button>'
+      +'</div>'
+    +'</div>';
+}
+
+function pgPlanner(){
+  return '<div class="sec-t">Study Planner</div><div class="sec-s">AI-powered weekly plan</div>'
+    +'<button id="gpbtn" class="btn btn-g btn-w" style="font-size:15px;padding:14px;margin-bottom:18px" onclick="genPlan()">✨ Generate New Plan</button>'
+    +(S.plan?'<div class="card cp"><div style="font-size:14px;font-weight:700;margin-bottom:12px">📅 Your 7-Day Quest Plan</div><div style="font-size:13px;color:#374151;line-height:1.8">'+mdToHtml(S.plan)+'</div></div>'
+    :'<div class="card cp" style="text-align:center;padding:28px"><div style="font-size:40px;margin-bottom:10px">📅</div><div style="font-size:15px;font-weight:700">No Study Plan Yet</div><div style="font-size:13px;color:var(--sub);margin-top:6px">AI test ke basis pe plan banata hai</div></div>');
+}
+
+function pgMistakes(){
+  var m=S.mb;
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div class="sec-t">Mistake Book</div><div style="font-size:13px;color:var(--sub)">'+m.length+' questions</div></div>'
+    +(m.length?'<button class="btn" style="background:#fee2e2;color:#dc2626;padding:6px 12px;font-size:12px" onclick="clearMb()">Clear</button>':'')
+  +'</div>'
+  +(m.length?SUBJ.map(function(s){
+    var sm=m.filter(function(q){return q.s===s;});
+    if(!sm.length)return '';
+    return '<div class="card cp" style="margin-bottom:12px"><div style="font-size:14px;font-weight:700;margin-bottom:10px;color:'+(s==='Mathematics'?'#7c3aed':s==='Physics'?'#0ea5e9':'#059669')+'">'+s+' ('+sm.length+')</div>'
+      +sm.slice(0,15).map(function(q){return '<div class="li"><div class="qb incorrect">Q'+q.q+'</div><div style="flex:1"><div style="font-size:12px;font-weight:600">'+esc(q.ch)+'</div><div style="font-size:11px;color:var(--sub)">'+esc(q.tn)+' · '+q.date+'</div></div><div style="font-size:11px;color:#ef4444;font-weight:700;flex-shrink:0">✗'+(q.u||'–')+' ✓'+q.ca+'</div></div>';}).join('')
+      +(sm.length>15?'<div style="text-align:center;padding:8px;font-size:12px;color:var(--sub)">+'+( sm.length-15)+' more</div>':'')
+    +'</div>';
+  }).join(''):'<div class="card cp" style="text-align:center;padding:28px"><div style="font-size:40px;margin-bottom:10px">📖</div><div style="font-size:15px;font-weight:700">Koi mistake nahi abhi</div><div style="font-size:13px;color:var(--sub);margin-top:6px">Galat answers automatically yahan save hote hain</div></div>');
+}
+
+function clearMb(){if(confirm('Clear all?')){S.mb=[];lsSave('biro-mb',[]);go('mistakes');}}
+
+function pgGoal(){
+  var tc=COLLEGES.filter(function(c){return c.n===S.goal.college;})[0]||COLLEGES[0];
+  var avgScore=S.tests.length?Math.round(S.tests.reduce(function(a,t){return a+(t.score||0);},0)/S.tests.length):0;
+  var gap=Math.max(0,tc.c-avgScore);
+  var daily=S.goal.months>0?Math.ceil(gap/(S.goal.months*30)):0;
+  return '<div class="sec-t">Goal Tracker</div><div class="sec-s">Target set karo, progress track karo</div>'
+    +'<div class="card cp" style="margin-bottom:12px">'
+      +'<div style="margin-bottom:12px"><label>Target College</label><select onchange="S.goal.college=this.value;lsSave(\'biro-goal\',S.goal);go(\'goal\')">'+COLLEGES.map(function(c){return '<option value="'+c.n+'" '+(S.goal.college===c.n?'selected':'')+'>'+c.n+' ('+c.c+')</option>';}).join('')+'</select></div>'
+      +'<div class="g2" style="margin-bottom:12px"><div><label>Study Hours/Day</label><input type="number" value="'+S.goal.hours+'" onchange="S.goal.hours=+this.value;lsSave(\'biro-goal\',S.goal)"/></div><div><label>Months Left</label><input type="number" value="'+S.goal.months+'" onchange="S.goal.months=+this.value;lsSave(\'biro-goal\',S.goal)"/></div></div>'
+      +'<button class="btn btn-p btn-w" onclick="toast(\'Goal saved! 🎯\')">Save Goal</button>'
+    +'</div>'
+    +'<div class="card cp" style="background:linear-gradient(135deg,#eff6ff,#f0fdf4);margin-bottom:12px">'
+      +'<div style="font-size:16px;font-weight:800;text-align:center;margin-bottom:14px">'+S.goal.college+'</div>'
+      +'<div style="display:flex;justify-content:space-around;text-align:center">'
+        +'<div><div style="font-size:11px;color:var(--sub)">Your Avg</div><div style="font-size:30px;font-weight:900;color:'+(avgScore>0?'#22c55e':'#ef4444')+'">'+avgScore+'</div></div>'
+        +'<div><div style="font-size:11px;color:var(--sub)">Target</div><div style="font-size:30px;font-weight:900;color:var(--blue)">'+tc.c+'</div></div>'
+        +'<div><div style="font-size:11px;color:var(--sub)">Gap</div><div style="font-size:30px;font-weight:900;color:#f59e0b">'+gap+'</div></div>'
+      +'</div>'
+    +'</div>'
+    +'<div class="card cp" style="background:#fff7ed;border:1px solid #fde68a;margin-bottom:12px">'
+      +'<div style="font-size:13px;font-weight:700;color:#92400e">⚡ Effort Required</div>'
+      +'<div style="font-size:14px;color:#78350f;margin-top:6px">Daily: <b style="color:var(--blue)">'+daily+' marks/day</b> with <b>'+S.goal.hours+'h/day</b> over <b>'+S.goal.months+' months</b></div>'
+    +'</div>'
+    +(S.tests.length>1?'<div class="card cp"><div style="font-size:13px;font-weight:700;margin-bottom:10px">Score Trend</div>'
+      +barChart(S.tests.slice(0,8).reverse().map(function(t){return t.score<0?0:t.score;}),S.tests.slice(0,8).reverse().map(function(_,i){return 'T'+(i+1);}),S.tests.slice(0,8).reverse().map(function(t){return t.score>0?'#2563eb':'#ef4444';}))
+    +'</div>':'');
+}
+
+function pgCommunity(){
+  return '<div class="sec-t">Community</div><div class="sec-s">Fellow aspirants se connect karo 🤝</div>'
+    +'<div class="card cp" style="margin-bottom:12px"><textarea id="pinp" rows="3" placeholder="Strategy, doubt, motivation share karo..."></textarea><button class="btn btn-p" style="margin-top:10px" onclick="addPost()">Post</button></div>'
+    +'<div id="plist">'+renderPosts()+'</div>'
+    +'<a href="https://t.me/biroskills" target="_blank" style="display:block;background:#0088cc;color:#fff;border-radius:10px;padding:12px;text-align:center;text-decoration:none;font-weight:700;font-size:14px;margin-top:6px">📱 Join Telegram Community</a>';
+}
+
+function renderPosts(){
+  return S.posts.map(function(p){
+    return '<div class="card cp" style="margin-bottom:10px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        +'<div style="width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#2563eb,#7c3aed);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;flex-shrink:0">'+p.name[0].toUpperCase()+'</div>'
+        +'<div><div style="font-size:13px;font-weight:700">'+esc(p.name)+'</div><div style="font-size:11px;color:#9ca3af">'+p.time+'</div></div>'
+      +'</div>'
+      +'<div style="font-size:14px;color:#374151;line-height:1.5">'+esc(p.text)+'</div>'
+      +'<div style="margin-top:8px"><button onclick="likePost('+p.id+')" style="background:none;border:none;cursor:pointer;font-size:12px;color:var(--sub)">❤️ '+p.likes+'</button></div>'
+    +'</div>';
+  }).join('');
+}
+
+function addPost(){
+  var inp=document.getElementById('pinp');
+  if(!inp||!inp.value.trim()){toast('Kuch type karo!','e');return;}
+  S.posts=[{id:Date.now(),name:'You',text:inp.value.trim(),time:'abhi',likes:0}].concat(S.posts);
+  lsSave('biro-posts',S.posts);
+  go('community');
+}
+
+function likePost(id){
+  S.posts=S.posts.map(function(p){return p.id===id?Object.assign({},p,{likes:p.likes+1}):p;});
+  lsSave('biro-posts',S.posts);
+  var pl=document.getElementById('plist');
+  if(pl)pl.innerHTML=renderPosts();
+}
+
+function pgHistory(){
+  var t=S.tests;
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">'
+    +'<div><div class="sec-t">Test History</div><div style="font-size:13px;color:var(--sub)">'+t.length+' attempts</div></div>'
+    +(t.length?'<button class="btn" style="background:#fee2e2;color:#dc2626;padding:6px 12px;font-size:12px" onclick="if(confirm(\'Sab delete?\''+')){S.tests=[];lsSave(\'biro-tests\',[]);go(\'history\')}">Clear All</button>':'')
+  +'</div>'
+  +(t.length?t.map(function(tt){
+    return '<div class="card cp" style="margin-bottom:10px;cursor:pointer;display:flex;align-items:center;gap:12px" onclick="openTest('+tt.id+')">'
+      +'<div style="width:44px;height:44px;border-radius:12px;background:'+(tt.score>0?'#dcfce7':'#fee2e2')+';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">'+(tt.score>0?'📈':'📉')+'</div>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:14px;font-weight:700">'+tt.name+'</div><div style="font-size:11px;color:var(--sub)">'+tt.ts+'</div>'
+        +'<div style="height:4px;border-radius:2px;background:#f1f5f9;margin-top:5px;overflow:hidden"><div style="width:'+pct(tt.score,tt.max)+'%;background:'+(tt.score>0?'#22c55e':'#ef4444')+';height:100%"></div></div>'
+      +'</div>'
+      +'<div style="text-align:right;flex-shrink:0"><div style="font-size:16px;font-weight:800;color:'+(tt.score>0?'#22c55e':'#ef4444')+'">'+tt.score+'/'+tt.max+'</div><div style="font-size:11px;color:var(--sub)">'+tt.acc+'%</div></div>'
+    +'</div>';
+  }).join(''):'<div class="card cp" style="text-align:center;padding:28px"><div style="font-size:38px;margin-bottom:10px">📊</div><div style="font-size:15px;font-weight:700">Koi history nahi</div></div>');
+}
+
+function pgSettings(){
+  return '<div class="sec-t">Settings</div><div class="sec-s">App configure karo</div>'
+    +'<div class="card cp" style="margin-bottom:12px">'
+      +'<div style="font-size:14px;font-weight:700;margin-bottom:4px">🔑 Anthropic API Key</div>'
+      +'<div style="font-size:12px;color:var(--sub);margin-bottom:10px">Biro-Brain AI ke liye. console.anthropic.com se lo.</div>'
+      +'<input type="password" id="akinp" value="'+esc(S.key)+'" placeholder="sk-ant-api03-..." style="margin-bottom:10px"/>'
+      +'<button class="btn btn-p btn-w" onclick="saveKey()">Save API Key</button>'
+      +'<div style="font-size:11px;color:#9ca3af;margin-top:8px">⚠️ Key localStorage mein save hoti hai</div>'
+    +'</div>'
+    +'<div class="card cp" style="margin-bottom:12px">'
+      +'<div style="font-size:14px;font-weight:700;margin-bottom:12px">📤 Export / Import</div>'
+      +'<div class="g2"><button class="btn" style="background:#eff6ff;color:var(--blue);border:1px solid #bfdbfe" onclick="exportData()">⬇ Export JSON</button>'
+        +'<label class="btn" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;cursor:pointer;justify-content:center">📂 Import<input type="file" accept=".json" style="display:none" onchange="importData(this)"/></label>'
+      +'</div>'
+    +'</div>'
+    +'<div class="card cp" style="background:#fff5f5;margin-bottom:12px">'
+      +'<div style="font-size:14px;font-weight:700;color:#dc2626;margin-bottom:4px">⚠️ Danger Zone</div>'
+      +'<div style="font-size:12px;color:var(--sub);margin-bottom:10px">Undo nahi ho sakti</div>'
+      +'<button class="btn btn-d btn-w" onclick="clearAll()">🗑️ Clear All Data</button>'
+    +'</div>'
+    +'<div class="card cp" style="text-align:center"><div style="font-size:28px;margin-bottom:8px">🚀</div><div style="font-size:14px;font-weight:700">Biro Test v1.0</div><div style="font-size:12px;color:var(--sub);margin-top:4px">Made with ❤️ for JEE/NEET aspirants</div><a href="https://t.me/biroskills" target="_blank" style="display:inline-block;margin-top:10px;color:var(--blue);font-size:13px;font-weight:600">Join Telegram →</a></div>';
+}
+
+function saveKey(){var v=document.getElementById('akinp').value.trim();S.key=v;localStorage.setItem('biro-key',v);toast('API key saved! ✅');}
+
+function exportData(){
+  var d={tests:S.tests,mb:S.mb,goal:S.goal};
+  var b=new Blob([JSON.stringify(d,null,2)],{type:'application/json'});
+  var u=URL.createObjectURL(b);var a=document.createElement('a');
+  a.href=u;a.download='biro-backup.json';a.click();
+  toast('Data exported! 📥');
+}
+
+function importData(input){
+  var f=input.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{
+      var d=JSON.parse(ev.target.result);
+      if(d.tests){S.tests=d.tests;lsSave('biro-tests',d.tests);}
+      if(d.mb){S.mb=d.mb;lsSave('biro-mb',d.mb);}
+      if(d.goal){S.goal=d.goal;lsSave('biro-goal',d.goal);}
+      toast('Data imported! ✅');go('settings');
+    }catch(e){toast('Invalid file!','e');}
+  };
+  r.readAsText(f);
+}
+
+function clearAll(){
+  if(confirm('Sab kuch delete karna chahte ho?')){
+    S.tests=[];S.mb=[];S.plan='';S.cur=null;
+    localStorage.clear();
+    toast('All data cleared','e');
+    go('dashboard');
+  }
+}
+
+// ── INIT ──
+renderNav();
+go('dashboard');
 </script>
 </body>
 </html>
