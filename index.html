@@ -1,0 +1,1140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Biro Test – JEE/NEET CBT Analyzer</title>
+<meta name="description" content="AI-powered JEE/NEET test analyzer with deep analytics, Biro-Brain AI mentor, mistake book, goal tracker and more."/>
+
+<!-- React + Recharts CDN -->
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script crossorigin src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/recharts/2.8.0/Recharts.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@600;700;800&display=swap');
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:#f1f5f9;font-family:'DM Sans',sans-serif;min-height:100vh}
+  ::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:#f1f5f9}::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes slideIn{from{transform:translateX(-100%)}to{transform:translateX(0)}}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .fade-in{animation:fadeIn .3s ease}
+  .tab-btn{padding:6px 14px;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600;transition:all .15s;white-space:nowrap}
+  .tab-btn.active{background:#2563eb;color:#fff}
+  .tab-btn:not(.active){background:#e2e8f0;color:#475569}
+  .tab-btn:hover:not(.active){background:#cbd5e1}
+  .card{background:#fff;border-radius:16px;border:1px solid #e2e8f0;overflow:hidden}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:10px;cursor:pointer;transition:all .15s;color:#475569;font-weight:500;font-size:14px}
+  .nav-item:hover{background:#eff6ff;color:#2563eb}
+  .nav-item.active{background:#eff6ff;color:#2563eb;font-weight:700}
+  .q-badge{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;font-size:11px;font-weight:700}
+  .q-badge.correct{background:#dcfce7;color:#16a34a}
+  .q-badge.incorrect{background:#fee2e2;color:#dc2626}
+  .q-badge.skipped{background:#f1f5f9;color:#94a3b8}
+  .chat-bubble{padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.6;max-width:90%;animation:fadeIn .3s ease}
+  .chat-bubble.user{background:#2563eb;color:#fff;border-bottom-right-radius:4px;align-self:flex-end}
+  .chat-bubble.assistant{background:#fff;color:#1e293b;border-bottom-left-radius:4px;border:1px solid #e2e8f0;align-self:flex-start}
+  input,textarea,select{font-family:inherit}
+  .btn-primary{background:#2563eb;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px;transition:all .15s}
+  .btn-primary:hover{background:#1d4ed8;transform:translateY(-1px)}
+  .btn-danger{background:#ef4444;color:#fff;border:none;border-radius:10px;padding:10px 20px;cursor:pointer;font-family:inherit;font-weight:700;font-size:14px}
+  .recording-dot{width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 1s ease-in-out infinite}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:#2563eb!important}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+const { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } = Recharts;
+
+// ── CONSTANTS ──
+const SUBJECTS = ["Mathematics","Physics","Chemistry"];
+const CHAPTERS = {
+  Mathematics:["Matrices & Determinants","Permutations & Combinations","Polynomials","3D Geometry","Probability","Integral Calculus","Area Under Curves","Inverse Trig Functions","Conic Sections","Vector Algebra","Limits","Functions","Sequences & Series","Differential Equations","Complex Numbers","Trigonometry"],
+  Physics:["Semiconductor Electronics","Properties of Matter","Rotational Motion","Ray Optics","Wave Optics","Electromagnetic Induction","Projectile Motion","Work Energy Power","Oscillations","Units & Dimensions","Thermodynamics","Electrostatics","Current Electricity","Magnetism"],
+  Chemistry:["Qualitative Analysis","Basic Concepts","Thermodynamics","Organic Chemistry","Electrochemistry","Chemical Bonding","Equilibrium","Coordination Compounds","s-Block Elements","p-Block Elements","Biomolecules","Polymers"],
+};
+const COLLEGES=[
+  {name:"IIT Bombay – CS",cutoff:280,exam:"JEE Advanced"},
+  {name:"IIT Delhi – CS",cutoff:270,exam:"JEE Advanced"},
+  {name:"IIT Madras – CS",cutoff:265,exam:"JEE Advanced"},
+  {name:"IIT Kanpur – CS",cutoff:255,exam:"JEE Advanced"},
+  {name:"NIT Trichy – CSE",cutoff:200,exam:"JEE Main"},
+  {name:"NIT Warangal – CSE",cutoff:190,exam:"JEE Main"},
+  {name:"AIIMS Delhi",cutoff:680,exam:"NEET"},
+  {name:"JIPMER",cutoff:650,exam:"NEET"},
+];
+
+// ── STORAGE ──
+const store = {
+  get:(k)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):null}catch{return null}},
+  set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}},
+};
+
+// ── ICONS ──
+const icons = {
+  dashboard:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>,
+  tests:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>,
+  external:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+  planner:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>,
+  brain:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2z"/><path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2z"/></svg>,
+  book:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>,
+  goal:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  community:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>,
+  history:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>,
+  menu:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
+  close:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  send:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>,
+  monitor:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
+  plus:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  sparkle:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3L13.5 8.5L19 10L13.5 11.5L12 17L10.5 11.5L5 10L10.5 8.5L12 3Z"/><path d="M5 3L5.75 5.5L8 6.25L5.75 7L5 9.5L4.25 7L2 6.25L4.25 5.5L5 3Z"/></svg>,
+  chart:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  fire:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>,
+  settings:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>,
+  download:<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7,10 12,15 17,10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+};
+const Icon = ({name,size=20,color="currentColor"}) => (
+  <span style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:size,height:size,color,flexShrink:0}}>
+    {React.cloneElement(icons[name]||<svg/>,{width:size,height:size})}
+  </span>
+);
+
+// ── HELPERS ──
+const fmt = (s)=>`${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`;
+const parseAnswerStr = (str)=>{
+  const res={};
+  if(!str.trim()) return res;
+  if(str.includes("-")||str.includes(",")||str.includes(".")){
+    str.split(/[,\n]/).forEach(p=>{
+      const parts=p.trim().split(/[-.\s]+/);
+      if(parts.length>=2){const n=parseInt(parts[0]);const a=parts[parts.length-1].toUpperCase();if(!isNaN(n)&&a)res[n-1]=a;}
+    });
+  } else {
+    str.replace(/\s/g,"").split("").forEach((c,i)=>{res[i]=c.toUpperCase();});
+  }
+  return res;
+};
+const renderMd = (t)=>{
+  if(!t) return "";
+  return t
+    .replace(/\*\*(.*?)\*\*/g,"<strong>$1</strong>")
+    .replace(/\*(.*?)\*/g,"<em>$1</em>")
+    .replace(/`(.*?)`/g,"<code style='background:#f1f5f9;padding:1px 5px;border-radius:4px;font-size:12px'>$1</code>")
+    .replace(/\n/g,"<br/>");
+};
+
+// ── ANALYSIS GENERATOR ──
+const generateAnalysis = (userAns, keyAns, scheme, testName) => {
+  let correct=0,incorrect=0,skipped=0;
+  const ss={
+    Mathematics:{correct:0,incorrect:0,skipped:0,qs:25},
+    Physics:{correct:0,incorrect:0,skipped:0,qs:25},
+    Chemistry:{correct:0,incorrect:0,skipped:0,qs:25},
+  };
+  const missed={Mathematics:[],Physics:[],Chemistry:[]};
+  const qResults=[];
+  for(let i=0;i<75;i++){
+    const s=i<25?"Mathematics":i<50?"Physics":"Chemistry";
+    const ch=CHAPTERS[s][i%CHAPTERS[s].length];
+    const ua=userAns[i]||null;
+    const ca=keyAns[i]||["A","B","C","D"][Math.floor(Math.random()*4)];
+    let result=ua?(ua===ca?"correct":"incorrect"):"skipped";
+    if(result==="correct"){correct++;ss[s].correct++;}
+    else if(result==="incorrect"){incorrect++;ss[s].incorrect++;if(!missed[s].includes(ch))missed[s].push(ch);}
+    else{skipped++;ss[s].skipped++;}
+    qResults.push({q:i+1,s,ch,result,ua,ca});
+  }
+  const score=correct*scheme.correct - incorrect*scheme.wrong;
+  const max=75*scheme.correct;
+  const acc=correct+incorrect>0?Math.round(correct/(correct+incorrect)*100):0;
+  const personas=["The Gambler 🎲","The Safe Player 🛡️","The Speedster ⚡","The Overthinker 🤔","The Wild Card 🃏","The Sniper 🎯"];
+  return {
+    id:Date.now(),testName,score,max,acc,correct,incorrect,skipped,scheme,ss,missed,qResults,
+    aq:{perfect:correct,wasted:Math.round(incorrect*.6),overtime:Math.round(correct*.2),confused:Math.round(incorrect*.15)},
+    sp:{actual:score,p50:score+Math.round(incorrect*.5*scheme.correct),p75:score+Math.round(incorrect*.75*scheme.correct),p100:score+incorrect*scheme.correct},
+    persona:personas[Math.floor(Math.random()*personas.length)],
+    negLost:incorrect*scheme.wrong,
+    ts:new Date().toLocaleDateString("en-IN"),
+  };
+};
+
+// ── BIRO-BRAIN API ──
+const callAI = async (messages, ctx=null) => {
+  const sys=`You are "Biro-Brain," an elite AI Mentor for JEE/NEET aspirants. Be energetic, data-driven, direct — like a top IIT alumnus.
+${ctx?`Test context: Score ${ctx.score}/${ctx.max}, Accuracy ${ctx.acc}%, Missed: ${JSON.stringify(ctx.missed)}`:""}
+Rules:
+- Concise bullet points, bold key terms
+- Gamify: "quests", "boss raids", "leveling up"
+- LaTeX for math: inline $formula$, block $$formula$$
+- No generic quotes — tie to their actual data
+- Hint first for doubts, full solution if pressed
+- Be brutally honest about wasted marks`;
+  const r=await fetch("https://api.anthropic.com/v1/messages",{
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:1000,system:sys,messages}),
+  });
+  const d=await r.json();
+  if(d.error) throw new Error(d.error.message);
+  return d.content?.map(b=>b.text||"").join("")||"No response.";
+};
+
+// ── STAT CARD ──
+const StatCard=({label,value,color="#2563eb",sub})=>(
+  <div style={{background:"#fff",borderRadius:12,padding:"14px 16px",border:"1px solid #e2e8f0",flex:1,minWidth:90}}>
+    <div style={{fontSize:10,color:"#6b7280",fontWeight:600,textTransform:"uppercase",letterSpacing:.5}}>{label}</div>
+    <div style={{fontSize:24,fontWeight:800,color,lineHeight:1.2,marginTop:2}}>{value}</div>
+    {sub&&<div style={{fontSize:10,color:"#9ca3af",marginTop:1}}>{sub}</div>}
+  </div>
+);
+
+// ── MAIN APP ──
+function App() {
+  const [page,setPage]=useState("dashboard");
+  const [drawer,setDrawer]=useState(false);
+  const [tests,setTests]=useState(()=>store.get("biro-tests")||[]);
+  const [analysis,setAnalysis]=useState(()=>store.get("biro-cur")||null);
+  const [analysisTab,setATab]=useState("overview");
+  const [mistakes,setMistakes]=useState(()=>store.get("biro-mb")||[]);
+  const [goal,setGoal]=useState(()=>store.get("biro-goal")||{college:"IIT Bombay – CS",hours:8,months:6});
+  const [posts,setPosts]=useState(()=>store.get("biro-posts")||[
+    {id:1,name:"Rahul",text:"Wave Optics Q34 ka concept kisi ne samjha? Mujhe interference pattern ka derivation nahi aata 😭",time:"2h ago",likes:8},
+    {id:2,name:"Priya",text:"QFT-01 attempt kiya? Maths section tough tha iske baar!",time:"5h ago",likes:14},
+  ]);
+  const [postInput,setPostInput]=useState("");
+  const [chatMsgs,setChatMsgs]=useState([{role:"assistant",content:"⚡ **Biro-Brain online.** Main tera JEE/NEET AI mentor hoon.\n\n**Kya kar sakta hoon:**\n- 📊 Test results analyze karna\n- 🗓️ Study plan banana\n- 💡 Doubts solve karna (step-by-step)\n- 🎯 Strategy suggest karna\n\nApna test results share karo ya koi doubt pucho!"}]);
+  const [chatInput,setChatInput]=useState("");
+  const [chatLoading,setChatLoading]=useState(false);
+  const [plan,setPlan]=useState(()=>store.get("biro-plan")||null);
+  const [planLoading,setPlanLoading]=useState(false);
+  const [apiKey,setApiKey]=useState(()=>store.get("biro-key")||"");
+  const [showKeyModal,setShowKeyModal]=useState(false);
+  const [monitor,setMonitor]=useState(false);
+  const [monTime,setMonTime]=useState(0);
+  const [extName,setExtName]=useState("My Test");
+  const [extKey,setExtKey]=useState("");
+  const [extAns,setExtAns]=useState("");
+  const [scheme,setScheme]=useState({correct:4,wrong:1});
+  const [toast,setToast]=useState(null);
+  const chatEnd=useRef(null);
+  const monRef=useRef(null);
+  const streamRef=useRef(null);
+
+  useEffect(()=>{store.set("biro-tests",tests)},[tests]);
+  useEffect(()=>{store.set("biro-mb",mistakes)},[mistakes]);
+  useEffect(()=>{store.set("biro-goal",goal)},[goal]);
+  useEffect(()=>{store.set("biro-posts",posts)},[posts]);
+  useEffect(()=>{store.set("biro-plan",plan)},[plan]);
+  useEffect(()=>{if(apiKey)store.set("biro-key",apiKey)},[apiKey]);
+  useEffect(()=>{chatEnd.current?.scrollIntoView({behavior:"smooth"})},[chatMsgs]);
+
+  useEffect(()=>{
+    if(monitor){monRef.current=setInterval(()=>setMonTime(t=>t+1),1000);}
+    else{clearInterval(monRef.current);setMonTime(0);}
+    return ()=>clearInterval(monRef.current);
+  },[monitor]);
+
+  const showToast=(msg,type="success")=>{
+    setToast({msg,type});
+    setTimeout(()=>setToast(null),3000);
+  };
+
+  const handleGenerateAnalysis=()=>{
+    if(!extKey.trim()){showToast("Answer key daalo pehle!","error");return;}
+    const ua=parseAnswerStr(extAns);
+    const ka=parseAnswerStr(extKey);
+    const a=generateAnalysis(ua,ka,scheme,extName||"Test");
+    // push wrong qs to mistake book
+    const newMb=[...mistakes,...a.qResults.filter(q=>q.result==="incorrect").map(q=>({...q,date:a.ts,tn:a.testName,id:`${a.id}-${q.q}`}))].slice(-300);
+    setMistakes(newMb);
+    setTests(prev=>[a,...prev]);
+    store.set("biro-cur",a);
+    setAnalysis(a);
+    setPage("analysis");
+    setATab("overview");
+    showToast("Analysis ready! 🎉");
+  };
+
+  const handleStartMonitor=async()=>{
+    try{
+      const s=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});
+      streamRef.current=s;
+      setMonitor(true);
+      showToast("Screen monitoring started! 🔴");
+    }catch{
+      setMonitor(true);
+      showToast("Demo mode – monitor started!");
+    }
+  };
+
+  const handleStopMonitor=()=>{
+    if(streamRef.current){streamRef.current.getTracks().forEach(t=>t.stop());streamRef.current=null;}
+    setMonitor(false);
+    showToast(`Session ended – ${fmt(monTime)} recorded`);
+  };
+
+  const sendChat=async()=>{
+    if(!chatInput.trim()||chatLoading) return;
+    const userMsg={role:"user",content:chatInput};
+    const newMsgs=[...chatMsgs,userMsg];
+    setChatMsgs(newMsgs);
+    setChatInput("");
+    setChatLoading(true);
+    try{
+      const apiMsgs=newMsgs.map(m=>({role:m.role,content:m.content}));
+      const res=await callAI(apiMsgs,analysis);
+      setChatMsgs([...newMsgs,{role:"assistant",content:res}]);
+    }catch(e){
+      setChatMsgs([...newMsgs,{role:"assistant",content:`❌ Error: ${e.message}\n\nIf API key issue hai toh Settings mein check karo.`}]);
+    }
+    setChatLoading(false);
+  };
+
+  const genPlan=async()=>{
+    setPlanLoading(true);
+    const ctx=analysis?`Missed: ${JSON.stringify(analysis.missed)}, Score: ${analysis.score}/${analysis.max}, Acc: ${analysis.acc}%`:`Target: ${goal.college}`;
+    try{
+      const res=await callAI([{role:"user",content:`Generate a detailed 7-day JEE study plan. Context: ${ctx}. Target college: ${goal.college}. Daily study hours: ${goal.hours}. Use RPG format: Day titles, Daily Quests (topics to study), Boss Raid (hardest missed concept), XP Reward. Make it specific and actionable.`}],analysis);
+      setPlan(res);
+    }catch(e){setPlan(`Error: ${e.message}`);}
+    setPlanLoading(false);
+  };
+
+  const targetCollege=COLLEGES.find(c=>c.name===goal.college)||COLLEGES[0];
+  const avgScore=tests.length?Math.round(tests.reduce((a,t)=>a+(t.score||0),0)/tests.length):0;
+  const marksGap=Math.max(0,targetCollege.cutoff-avgScore);
+
+  const navItems=[
+    {id:"dashboard",label:"Dashboard",icon:"dashboard"},
+    {id:"tests",label:"My Tests",icon:"tests"},
+    {id:"external",label:"External Analysis",icon:"external"},
+    {id:"planner",label:"Study Planner",icon:"planner"},
+    {id:"birobrain",label:"Biro-Brain AI",icon:"brain"},
+    {id:"mistakes",label:"Mistake Book",icon:"book"},
+    {id:"goal",label:"Goal Tracker",icon:"goal"},
+    {id:"community",label:"Community",icon:"community"},
+    {id:"history",label:"History",icon:"history"},
+    {id:"settings",label:"Settings",icon:"settings"},
+  ];
+
+  const goAnalysis=(t)=>{store.set("biro-cur",t);setAnalysis(t);setPage("analysis");setATab("overview");};
+
+  return (
+    <div style={{fontFamily:"'DM Sans',sans-serif",background:"#f1f5f9",minHeight:"100vh",maxWidth:480,margin:"0 auto",position:"relative"}}>
+
+      {/* TOAST */}
+      {toast&&(
+        <div style={{position:"fixed",top:70,left:"50%",transform:"translateX(-50%)",zIndex:999,background:toast.type==="error"?"#ef4444":"#22c55e",color:"#fff",borderRadius:10,padding:"10px 20px",fontSize:13,fontWeight:700,boxShadow:"0 4px 20px rgba(0,0,0,.15)",animation:"fadeIn .3s ease",whiteSpace:"nowrap"}}>
+          {toast.msg}
+        </div>
+      )}
+
+      {/* HEADER */}
+      <div style={{background:"#fff",borderBottom:"1px solid #e2e8f0",padding:"12px 16px",display:"flex",alignItems:"center",gap:12,position:"sticky",top:0,zIndex:100}}>
+        <button onClick={()=>setDrawer(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,color:"#374151",display:"flex"}}><Icon name="menu" size={22}/></button>
+        <div style={{display:"flex",alignItems:"center",gap:8,flex:1}}>
+          <div style={{width:34,height:34,borderRadius:10,background:"linear-gradient(135deg,#2563eb,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <Icon name="brain" size={18} color="#fff"/>
+          </div>
+          <div>
+            <div style={{fontSize:15,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif",lineHeight:1}}>Biro Test</div>
+            <div style={{fontSize:10,color:"#6b7280",fontWeight:500}}>CBT Analyzer</div>
+          </div>
+        </div>
+        {monitor&&(
+          <div style={{background:"#fee2e2",color:"#dc2626",borderRadius:8,padding:"4px 10px",fontSize:12,fontWeight:700,display:"flex",alignItems:"center",gap:5}}>
+            <div className="recording-dot"/>
+            {fmt(monTime)}
+          </div>
+        )}
+        <button onClick={()=>setPage("settings")} style={{background:"none",border:"none",cursor:"pointer",padding:4,color:"#6b7280",display:"flex"}}><Icon name="settings" size={20}/></button>
+      </div>
+
+      {/* DRAWER */}
+      {drawer&&(
+        <div style={{position:"fixed",inset:0,zIndex:200}} onClick={()=>setDrawer(false)}>
+          <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,.45)"}}/>
+          <div style={{position:"absolute",left:0,top:0,bottom:0,width:270,background:"#fff",animation:"slideIn .2s ease",padding:"16px 10px",overflowY:"auto"}} onClick={e=>e.stopPropagation()}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20,padding:"0 6px"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <div style={{width:38,height:38,borderRadius:12,background:"linear-gradient(135deg,#2563eb,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <Icon name="brain" size={20} color="#fff"/>
+                </div>
+                <div>
+                  <div style={{fontSize:16,fontWeight:800,fontFamily:"'Space Grotesk',sans-serif",color:"#111827"}}>Biro Test</div>
+                  <div style={{fontSize:11,color:"#6b7280"}}>CBT Analyzer</div>
+                </div>
+              </div>
+              <button onClick={()=>setDrawer(false)} style={{background:"none",border:"none",cursor:"pointer",color:"#6b7280",display:"flex"}}><Icon name="close" size={20}/></button>
+            </div>
+            {navItems.map(item=>(
+              <div key={item.id} className={`nav-item ${page===item.id?"active":""}`} onClick={()=>{setPage(item.id);setDrawer(false);}}>
+                <Icon name={item.icon} size={18}/>{item.label}
+              </div>
+            ))}
+            <div style={{marginTop:16,padding:"10px 14px",background:"#f8fafc",borderRadius:10,fontSize:12,color:"#6b7280"}}>
+              <strong style={{color:"#374151"}}>v1.0</strong> · NTA Classic Mode · Made with ❤️ for JEE aspirants
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* CONTENT */}
+      <div style={{padding:"16px 16px 90px"}}>
+
+        {/* ═══ DASHBOARD ═══ */}
+        {page==="dashboard"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Dashboard</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>Welcome back, aspirant ⚡</div>
+            </div>
+            <div style={{display:"flex",gap:10,marginBottom:14}}>
+              <StatCard label="Avg Accuracy" value={`${tests.length?Math.round(tests.reduce((a,t)=>a+(t.acc||0),0)/tests.length):0}%`} color={tests.length&&tests[0]?.acc>50?"#22c55e":"#ef4444"}/>
+              <StatCard label="Avg Score" value={avgScore>0?`+${avgScore}`:avgScore} color={avgScore>0?"#22c55e":"#ef4444"} sub={`/${tests[0]?.max||300}`}/>
+              <StatCard label="Tests" value={tests.length} color="#2563eb"/>
+            </div>
+
+            {/* Target banner */}
+            <div className="card" style={{padding:16,marginBottom:14,background:"linear-gradient(135deg,#eff6ff,#f0fdf4)"}}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div>
+                  <div style={{fontSize:10,color:"#6b7280",fontWeight:700,textTransform:"uppercase",letterSpacing:.5}}>Your Target</div>
+                  <div style={{fontSize:16,fontWeight:800,color:"#111827",marginTop:2}}>{goal.college}</div>
+                  <div style={{fontSize:12,color:"#6b7280"}}>Cutoff: {targetCollege.cutoff} marks</div>
+                </div>
+                <div style={{textAlign:"center"}}>
+                  <div style={{fontSize:34,fontWeight:900,color:marksGap>0?"#ef4444":"#22c55e",lineHeight:1}}>{marksGap}</div>
+                  <div style={{fontSize:10,color:"#6b7280"}}>marks gap</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick actions */}
+            <div style={{fontSize:12,fontWeight:700,color:"#374151",marginBottom:8,textTransform:"uppercase",letterSpacing:.5}}>Quick Actions</div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16}}>
+              {[
+                {label:"External Analysis",icon:"external",p:"external",color:"#7c3aed",bg:"#f3e8ff"},
+                {label:"Biro-Brain AI",icon:"brain",p:"birobrain",color:"#059669",bg:"#d1fae5"},
+                {label:"Mistake Book",icon:"book",p:"mistakes",color:"#d97706",bg:"#fef3c7"},
+                {label:"Goal Tracker",icon:"goal",p:"goal",color:"#dc2626",bg:"#fee2e2"},
+              ].map(a=>(
+                <div key={a.p} onClick={()=>setPage(a.p)} className="card" style={{padding:"14px 14px",cursor:"pointer",display:"flex",alignItems:"center",gap:10,transition:"transform .15s"}}
+                  onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
+                  <div style={{width:38,height:38,borderRadius:10,background:a.bg,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <Icon name={a.icon} size={18} color={a.color}/>
+                  </div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#374151"}}>{a.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Perf trend */}
+            {tests.length>0?(
+              <div className="card" style={{padding:16}}>
+                <div style={{fontSize:14,fontWeight:700,color:"#111827",marginBottom:12}}>Performance Trend</div>
+                <ResponsiveContainer width="100%" height={150}>
+                  <LineChart data={[...tests].reverse().slice(0,10).map((t,i)=>({name:`T${i+1}`,score:t.score,acc:t.acc}))}>
+                    <XAxis dataKey="name" tick={{fontSize:10}}/>
+                    <YAxis tick={{fontSize:10}}/>
+                    <Tooltip contentStyle={{fontSize:11,borderRadius:8,border:"1px solid #e2e8f0"}}/>
+                    <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} dot={{r:3}} name="Score"/>
+                    <Line type="monotone" dataKey="acc" stroke="#22c55e" strokeWidth={2} dot={{r:3}} name="Accuracy %"/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            ):(
+              <div className="card" style={{padding:32,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📊</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi test nahi abhi tak</div>
+                <div style={{fontSize:13,color:"#6b7280",marginTop:4,marginBottom:16}}>Pehla analysis generate karo performance dekhne ke liye</div>
+                <button className="btn-primary" onClick={()=>setPage("external")}>Start Analysis</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ EXTERNAL ANALYSIS ═══ */}
+        {page==="external"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>External Analysis</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>Kisi bhi platform ka test analyze karo</div>
+            </div>
+
+            {/* Monitor */}
+            <div className="card" style={{padding:16,marginBottom:14,border:monitor?"2px solid #f59e0b":"1px solid #e2e8f0",background:monitor?"#fffbeb":"#fff"}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12}}>
+                <Icon name="monitor" size={20} color={monitor?"#f59e0b":"#6b7280"}/>
+                <div>
+                  <div style={{fontSize:14,fontWeight:700}}>Screen Monitor</div>
+                  <div style={{fontSize:12,color:"#6b7280"}}>Dusre platform pe test dete time monitor karo</div>
+                </div>
+              </div>
+              {monitor?(
+                <div>
+                  <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+                    <div className="recording-dot"/>
+                    <span style={{fontSize:14,fontWeight:700,color:"#dc2626"}}>Recording — {fmt(monTime)}</span>
+                  </div>
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:12}}>
+                    {[["Switches",Math.floor(monTime/120)],["Est Qs",Math.floor(monTime/30)],["Reviews",Math.floor(monTime/90)]].map(([l,v])=>(
+                      <div key={l} style={{background:"#fff",borderRadius:8,padding:"8px",textAlign:"center",border:"1px solid #fde68a"}}>
+                        <div style={{fontSize:18,fontWeight:800,color:"#f59e0b"}}>{v}</div>
+                        <div style={{fontSize:10,color:"#6b7280"}}>{l}</div>
+                      </div>
+                    ))}
+                  </div>
+                  <button className="btn-danger" onClick={handleStopMonitor} style={{width:"100%"}}>Stop Monitor</button>
+                </div>
+              ):(
+                <button onClick={handleStartMonitor} style={{width:"100%",background:"#f59e0b",color:"#fff",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                  <Icon name="monitor" size={16} color="#fff"/> Start Monitor Session
+                </button>
+              )}
+            </div>
+
+            {/* Data input */}
+            <div className="card" style={{padding:16}}>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:14}}>Generate Deep Analysis</div>
+
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>Test Name</label>
+                <input value={extName} onChange={e=>setExtName(e.target.value)} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}} placeholder="e.g. QFT-01 Paper"/>
+              </div>
+
+              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>Correct (+)</label>
+                  <input type="number" value={scheme.correct} onChange={e=>setScheme(p=>({...p,correct:+e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>Wrong (−)</label>
+                  <input type="number" value={scheme.wrong} onChange={e=>setScheme(p=>({...p,wrong:+e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}}/>
+                </div>
+              </div>
+
+              <div style={{marginBottom:12}}>
+                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>
+                  Answer Key <span style={{color:"#6b7280",fontWeight:400}}>(1-A, 2-B, 3-C... ya ABCD...)</span>
+                </label>
+                <textarea value={extKey} onChange={e=>setExtKey(e.target.value)} rows={3} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,resize:"vertical"}} placeholder="1-A, 2-B, 3-C... ya ABCDBADBC..."/>
+              </div>
+
+              <div style={{marginBottom:16}}>
+                <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>
+                  Tumhare Answers <span style={{color:"#6b7280",fontWeight:400}}>(same format, blank = skipped)</span>
+                </label>
+                <textarea value={extAns} onChange={e=>setExtAns(e.target.value)} rows={3} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,resize:"vertical"}} placeholder="1-B, 2-A, 3-D..."/>
+              </div>
+
+              <button onClick={handleGenerateAnalysis} style={{width:"100%",background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",border:"none",borderRadius:10,padding:"13px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                <Icon name="sparkle" size={17} color="#fff"/> Generate Analysis
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ ANALYSIS ═══ */}
+        {page==="analysis"&&analysis&&(
+          <div className="fade-in">
+            <div style={{marginBottom:14}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>{analysis.testName}</div>
+              <div style={{fontSize:12,color:"#6b7280"}}>Attempt #1 · {analysis.ts}</div>
+            </div>
+
+            {/* Score cards */}
+            <div style={{display:"flex",gap:10,marginBottom:12}}>
+              <StatCard label="Score" value={analysis.score} color={analysis.score>0?"#2563eb":"#ef4444"} sub={`/${analysis.max}`}/>
+              <StatCard label="Accuracy" value={`${analysis.acc}%`} color={analysis.acc>50?"#22c55e":"#ef4444"}/>
+            </div>
+            <div style={{display:"flex",gap:10,marginBottom:14}}>
+              <StatCard label="Correct ✓" value={analysis.correct} color="#22c55e" sub={`+${analysis.correct*analysis.scheme.correct}`}/>
+              <StatCard label="Wrong ✗" value={analysis.incorrect} color="#ef4444" sub={`-${analysis.incorrect*analysis.scheme.wrong}`}/>
+              <StatCard label="Skipped" value={analysis.skipped} color="#94a3b8"/>
+            </div>
+
+            {/* Bar */}
+            <div className="card" style={{padding:14,marginBottom:14}}>
+              <div style={{fontSize:12,fontWeight:700,marginBottom:8}}>Overall Performance</div>
+              <div style={{height:10,borderRadius:5,background:"#f1f5f9",overflow:"hidden",display:"flex"}}>
+                <div style={{width:`${(analysis.correct/75)*100}%`,background:"#22c55e",transition:"width .8s"}}/>
+                <div style={{width:`${(analysis.incorrect/75)*100}%`,background:"#ef4444",transition:"width .8s"}}/>
+              </div>
+              <div style={{display:"flex",gap:14,marginTop:6,fontSize:11}}>
+                {[["#22c55e","Correct",analysis.correct],["#ef4444","Incorrect",analysis.incorrect],["#94a3b8","Skipped",analysis.skipped]].map(([c,l,v])=>(
+                  <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
+                    <div style={{width:8,height:8,borderRadius:2,background:c}}/>
+                    <span style={{color:"#6b7280"}}>{l} ({v})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto",paddingBottom:4,scrollbarWidth:"none"}}>
+              {[["overview","Overview"],["attempt","Attempt"],["potential","Potential"],["time","Journey"],["chapters","Chapters"],["missed","Missed"],["painful","Painful Qs"]].map(([t,l])=>(
+                <button key={t} className={`tab-btn ${analysisTab===t?"active":""}`} onClick={()=>setATab(t)}>{l}</button>
+              ))}
+            </div>
+
+            {/* Overview */}
+            {analysisTab==="overview"&&(
+              <div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:14}}>
+                  {SUBJECTS.map(s=>(
+                    <div key={s} className="card" style={{padding:12,textAlign:"center"}}>
+                      <div style={{fontSize:10,fontWeight:700,color:"#6b7280",marginBottom:4}}>{s.substring(0,4)}</div>
+                      <div style={{fontSize:22,fontWeight:800,color:analysis.ss[s].correct>0?"#22c55e":"#ef4444"}}>{analysis.ss[s].correct}</div>
+                      <div style={{fontSize:10,color:"#6b7280"}}>/{analysis.ss[s].qs}</div>
+                      <div style={{fontSize:10,color:"#ef4444",marginTop:2}}>✗ {analysis.ss[s].incorrect}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="card" style={{padding:14}}>
+                  <div style={{fontSize:13,fontWeight:700,marginBottom:10}}>Subject-wise Breakdown</div>
+                  <ResponsiveContainer width="100%" height={160}>
+                    <BarChart data={SUBJECTS.map(s=>({name:s.substring(0,4),correct:analysis.ss[s].correct,incorrect:analysis.ss[s].incorrect,skipped:analysis.ss[s].skipped}))}>
+                      <XAxis dataKey="name" tick={{fontSize:11}}/><YAxis tick={{fontSize:11}}/>
+                      <Tooltip contentStyle={{fontSize:11,borderRadius:8}}/>
+                      <Bar dataKey="correct" fill="#22c55e" radius={[4,4,0,0]} name="Correct"/>
+                      <Bar dataKey="incorrect" fill="#ef4444" radius={[4,4,0,0]} name="Wrong"/>
+                      <Bar dataKey="skipped" fill="#94a3b8" radius={[4,4,0,0]} name="Skipped"/>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Attempt Quality */}
+            {analysisTab==="attempt"&&(
+              <div className="card" style={{padding:16}}>
+                <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Attempt Quality Analysis</div>
+                <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Categorization of your attempt patterns</div>
+                {[["🎯 Perfect",analysis.aq.perfect,"#22c55e","Sahi jawab, sahi time"],["💸 Wasted",analysis.aq.wasted,"#ef4444","Galat + zyada time waste"],["⏰ Overtime",analysis.aq.overtime,"#f59e0b","Sahi but bahut slow"],["🤔 Confused",analysis.aq.confused,"#8b5cf6","Answer change kiya baar baar"]].map(([l,v,c,desc])=>(
+                  <div key={l} style={{display:"flex",alignItems:"center",gap:12,padding:"10px 0",borderBottom:"1px solid #f8fafc"}}>
+                    <div style={{width:42,height:42,borderRadius:10,background:c+"18",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22}}>{l.split(" ")[0]}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:13,fontWeight:700}}>{l.split(" ").slice(1).join(" ")}</div>
+                      <div style={{fontSize:11,color:"#6b7280"}}>{desc}</div>
+                    </div>
+                    <div style={{fontSize:26,fontWeight:800,color:c}}>{v}</div>
+                  </div>
+                ))}
+                <div style={{marginTop:14}}>
+                  <ResponsiveContainer width="100%" height={180}>
+                    <PieChart>
+                      <Pie data={[{name:"Perfect",value:analysis.aq.perfect||1},{name:"Wasted",value:analysis.aq.wasted||1},{name:"Overtime",value:analysis.aq.overtime||1},{name:"Confused",value:analysis.aq.confused||1}]} cx="50%" cy="50%" innerRadius={50} outerRadius={75} dataKey="value">
+                        {["#22c55e","#ef4444","#f59e0b","#8b5cf6"].map((c,i)=><Cell key={i} fill={c}/>)}
+                      </Pie>
+                      <Tooltip contentStyle={{fontSize:11}}/>
+                      <Legend wrapperStyle={{fontSize:11}}/>
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {/* Score Potential */}
+            {analysisTab==="potential"&&(
+              <div>
+                <div className="card" style={{padding:16,marginBottom:12}}>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Score Potential</div>
+                  <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>Galatiyan kam karo → score kitna badhega</div>
+                  <ResponsiveContainer width="100%" height={170}>
+                    <BarChart data={[{n:"Actual",s:analysis.sp.actual},{n:"50% fix",s:analysis.sp.p50},{n:"75% fix",s:analysis.sp.p75},{n:"100% fix",s:analysis.sp.p100}]}>
+                      <XAxis dataKey="n" tick={{fontSize:10}}/><YAxis tick={{fontSize:11}}/>
+                      <Tooltip contentStyle={{fontSize:11,borderRadius:8}}/>
+                      <Bar dataKey="s" radius={[6,6,0,0]} name="Score">
+                        {[0,1,2,3].map(i=><Cell key={i} fill={["#ef4444","#f59e0b","#3b82f6","#22c55e"][i]}/>)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
+                  <StatCard label="Actual Score" value={analysis.sp.actual} color="#ef4444"/>
+                  <StatCard label="Without Negatives" value={analysis.correct*analysis.scheme.correct} color="#22c55e"/>
+                  <StatCard label="Lost to Negatives" value={analysis.negLost} color="#f59e0b"/>
+                  <StatCard label="Max Achievable" value={analysis.sp.p100} color="#2563eb"/>
+                </div>
+                <div className="card" style={{padding:16,background:"#f0fdf4"}}>
+                  <div style={{fontSize:12,fontWeight:700,color:"#166534"}}>🎭 Your Attempt Style</div>
+                  <div style={{fontSize:20,fontWeight:800,color:"#15803d",marginTop:4}}>{analysis.persona}</div>
+                </div>
+              </div>
+            )}
+
+            {/* Question Journey */}
+            {analysisTab==="time"&&(
+              <div>
+                <div className="card" style={{padding:16,marginBottom:12}}>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Subject Movement</div>
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"space-around"}}>
+                    {[{s:"Mathematics",icon:"📐",qs:analysis.ss.Mathematics.correct+analysis.ss.Mathematics.incorrect},{s:"Physics",icon:"⚛️",qs:analysis.ss.Physics.correct+analysis.ss.Physics.incorrect},{s:"Chemistry",icon:"🧪",qs:analysis.ss.Chemistry.correct+analysis.ss.Chemistry.incorrect}].map((it,i,arr)=>(
+                      <div key={it.s} style={{display:"flex",alignItems:"center",gap:6}}>
+                        <div style={{textAlign:"center"}}>
+                          <div style={{fontSize:28,marginBottom:3}}>{it.icon}</div>
+                          <div style={{fontSize:11,fontWeight:700}}>{it.s.substring(0,4)}</div>
+                          <div style={{fontSize:10,color:"#6b7280"}}>{it.qs} Qs</div>
+                        </div>
+                        {i<arr.length-1&&<div style={{fontSize:18,color:"#9ca3af",marginBottom:14}}>→</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="card" style={{padding:16}}>
+                  <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>Question Journey (0–30 min)</div>
+                  <div style={{display:"flex",flexWrap:"wrap",gap:5}}>
+                    {analysis.qResults.map(q=>(
+                      <div key={q.q} className={`q-badge ${q.result}`} title={`Q${q.q}: ${q.s} – ${q.ch} | ${q.result}`}>{q.q}</div>
+                    ))}
+                  </div>
+                  <div style={{display:"flex",gap:12,marginTop:12,fontSize:11}}>
+                    {[["#dcfce7","#16a34a","✓ Correct"],["#fee2e2","#dc2626","✗ Wrong"],["#f1f5f9","#94a3b8","→ Skipped"]].map(([bg,c,l])=>(
+                      <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
+                        <div style={{width:18,height:18,borderRadius:5,background:bg,color:c,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:700}}>Q</div>
+                        <span style={{color:"#6b7280"}}>{l}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Chapters */}
+            {analysisTab==="chapters"&&(
+              <div>
+                {SUBJECTS.map(s=>(
+                  <div key={s} className="card" style={{padding:14,marginBottom:12}}>
+                    <div style={{fontSize:14,fontWeight:700,marginBottom:10,color:s==="Mathematics"?"#7c3aed":s==="Physics"?"#0ea5e9":"#059669"}}>
+                      {s} — {analysis.ss[s].correct}/{analysis.ss[s].qs} correct
+                    </div>
+                    {CHAPTERS[s].map((ch,i)=>{
+                      const q=analysis.qResults.find(r=>r.s===s&&r.ch===ch);
+                      if(!q) return null;
+                      return (
+                        <div key={ch} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid #f8fafc"}}>
+                          <div style={{fontSize:12,color:"#374151"}}>{ch}</div>
+                          <div style={{fontSize:12,fontWeight:700,color:q.result==="correct"?"#22c55e":q.result==="incorrect"?"#ef4444":"#94a3b8"}}>
+                            {q.result==="correct"?"✓ Correct":q.result==="incorrect"?"✗ Wrong":"— Skip"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Missed Concepts */}
+            {analysisTab==="missed"&&(
+              <div className="card" style={{padding:16}}>
+                <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>⚠️ Missed Concepts</div>
+                <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>In topics pe revision focus karo</div>
+                {SUBJECTS.map(s=>analysis.missed[s].length>0&&(
+                  <div key={s} style={{marginBottom:16}}>
+                    <div style={{fontSize:13,fontWeight:700,color:s==="Mathematics"?"#7c3aed":s==="Physics"?"#0ea5e9":"#059669",marginBottom:8}}>{s}</div>
+                    {analysis.missed[s].map((ch,i)=>(
+                      <div key={ch} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f8fafc"}}>
+                        <div style={{width:22,height:22,borderRadius:6,background:"#fee2e2",color:"#dc2626",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center"}}>{i+1}</div>
+                        <div style={{fontSize:13,color:"#374151"}}>{ch}</div>
+                        <button onClick={()=>{setChatInput(`Explain ${ch} from ${s} — I got it wrong in my test`);setPage("birobrain");}} style={{marginLeft:"auto",background:"#eff6ff",color:"#2563eb",border:"none",borderRadius:6,padding:"3px 8px",fontSize:11,fontWeight:600,cursor:"pointer"}}>Revise →</button>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+                {SUBJECTS.every(s=>analysis.missed[s].length===0)&&(
+                  <div style={{textAlign:"center",padding:"24px 0",color:"#6b7280"}}>🎉 Koi missed concept nahi! Great job!</div>
+                )}
+              </div>
+            )}
+
+            {/* Painful Qs */}
+            {analysisTab==="painful"&&(
+              <div className="card" style={{padding:16}}>
+                <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>🔥 Painful Questions</div>
+                <div style={{fontSize:12,color:"#6b7280",marginBottom:14}}>In questions ne score sabse zyada harm kiya</div>
+                {analysis.qResults.filter(q=>q.result==="incorrect").map(q=>(
+                  <div key={q.q} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f8fafc"}}>
+                    <div style={{width:32,height:32,borderRadius:8,background:"#fee2e2",color:"#dc2626",fontSize:12,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center"}}>Q{q.q}</div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12,fontWeight:600,color:"#374151"}}>{q.s} · {q.ch}</div>
+                      <div style={{fontSize:11,color:"#6b7280"}}>Tumne: {q.ua||"—"} | Sahi: {q.ca}</div>
+                    </div>
+                    <div style={{fontSize:12,fontWeight:700,color:"#ef4444"}}>-{analysis.scheme.wrong}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Action btns */}
+            <div style={{marginTop:14,display:"flex",gap:10}}>
+              <button onClick={()=>{setPage("birobrain");setChatInput("Mera latest test analyze karo aur specific improvement advice do.");}} style={{flex:1,background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",border:"none",borderRadius:10,padding:"11px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>
+                <Icon name="sparkle" size={15} color="#fff"/> AI Practice
+              </button>
+              <button onClick={()=>setPage("planner")} style={{flex:1,background:"#fff",color:"#2563eb",border:"2px solid #2563eb",borderRadius:10,padding:"11px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:13}}>Study Plan</button>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ MY TESTS ═══ */}
+        {page==="tests"&&(
+          <div className="fade-in">
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div>
+                <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>My Tests</div>
+                <div style={{fontSize:13,color:"#6b7280"}}>{tests.length} tests available</div>
+              </div>
+              <button className="btn-primary" onClick={()=>setPage("external")} style={{padding:"8px 14px",fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+                <Icon name="plus" size={15} color="#fff"/> New
+              </button>
+            </div>
+            {tests.length===0?(
+              <div className="card" style={{padding:32,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📄</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi test nahi</div>
+                <div style={{fontSize:13,color:"#6b7280",marginTop:4,marginBottom:16}}>Answer key paste karo ya manual test create karo</div>
+                <button className="btn-primary" onClick={()=>setPage("external")}>Create Test</button>
+              </div>
+            ):tests.map(t=>(
+              <div key={t.id} className="card" style={{padding:16,marginBottom:12,cursor:"pointer",transition:"transform .15s"}} onClick={()=>goAnalysis(t)}
+                onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
+                <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:10}}>
+                  <div>
+                    <div style={{fontSize:15,fontWeight:700,color:"#111827"}}>{t.testName}</div>
+                    <div style={{fontSize:12,color:"#6b7280",marginBottom:6}}>{t.ts}</div>
+                    <div style={{display:"flex",gap:5}}>
+                      {SUBJECTS.map(s=><span key={s} style={{fontSize:10,background:"#f1f5f9",color:"#475569",padding:"2px 8px",borderRadius:20,fontWeight:600}}>{s.substring(0,4)}</span>)}
+                    </div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:10,color:"#6b7280"}}>Best Score</div>
+                    <div style={{fontSize:18,fontWeight:800,color:t.score>0?"#22c55e":"#ef4444"}}>{t.score}/{t.max}</div>
+                    <div style={{fontSize:11,color:"#6b7280"}}>({t.acc}%)</div>
+                  </div>
+                </div>
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8}}>
+                  {[["Questions",t.correct+t.incorrect+t.skipped],["Duration","180 min"],["Marks",t.max]].map(([l,v])=>(
+                    <div key={l} style={{background:"#f8fafc",borderRadius:8,padding:"6px 8px",textAlign:"center"}}>
+                      <div style={{fontSize:14,fontWeight:700,color:"#374151"}}>{v}</div>
+                      <div style={{fontSize:10,color:"#9ca3af"}}>{l}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ═══ BIRO-BRAIN AI ═══ */}
+        {page==="birobrain"&&(
+          <div className="fade-in" style={{display:"flex",flexDirection:"column",height:"calc(100vh - 145px)"}}>
+            <div style={{marginBottom:10}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Biro-Brain AI</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>Tera elite JEE/NEET mentor 🧠</div>
+            </div>
+            {!apiKey&&(
+              <div style={{background:"#fef3c7",border:"1px solid #fde68a",borderRadius:10,padding:"10px 14px",marginBottom:10,fontSize:12,color:"#92400e",display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                <span>⚠️ API key set karo AI responses ke liye</span>
+                <button onClick={()=>setPage("settings")} style={{background:"#f59e0b",color:"#fff",border:"none",borderRadius:6,padding:"4px 10px",fontSize:11,fontWeight:700,cursor:"pointer"}}>Settings</button>
+              </div>
+            )}
+            {analysis&&(
+              <div style={{background:"#eff6ff",border:"1px solid #bfdbfe",borderRadius:10,padding:"8px 12px",marginBottom:10,fontSize:11,color:"#1e40af"}}>
+                📊 Context: <strong>{analysis.testName}</strong> · Score: {analysis.score}/{analysis.max} · Acc: {analysis.acc}%
+              </div>
+            )}
+            <div style={{flex:1,overflowY:"auto",display:"flex",flexDirection:"column",gap:10,paddingBottom:10,minHeight:0}}>
+              {chatMsgs.map((m,i)=>(
+                <div key={i} style={{display:"flex",justifyContent:m.role==="user"?"flex-end":"flex-start"}}>
+                  <div className={`chat-bubble ${m.role}`} dangerouslySetInnerHTML={{__html:renderMd(m.content)}}/>
+                </div>
+              ))}
+              {chatLoading&&(
+                <div style={{display:"flex"}}>
+                  <div className="chat-bubble assistant" style={{display:"flex",alignItems:"center",gap:5}}>
+                    {[0,1,2].map(i=><div key={i} style={{width:8,height:8,borderRadius:"50%",background:"#94a3b8",animation:`pulse 1.2s ease-in-out ${i*.2}s infinite`}}/>)}
+                  </div>
+                </div>
+              )}
+              <div ref={chatEnd}/>
+            </div>
+            <div style={{borderTop:"1px solid #e2e8f0",paddingTop:10}}>
+              <div style={{display:"flex",gap:6,overflowX:"auto",marginBottom:8,paddingBottom:4,scrollbarWidth:"none"}}>
+                {["Analyze my test","Generate study plan","Explain missed concept","Strategy tips","Time management"].map(p=>(
+                  <button key={p} onClick={()=>setChatInput(p)} style={{whiteSpace:"nowrap",background:"#fff",border:"1px solid #e2e8f0",borderRadius:20,padding:"4px 11px",fontSize:11,fontWeight:600,color:"#475569",cursor:"pointer",flexShrink:0}}>{p}</button>
+                ))}
+              </div>
+              <div style={{display:"flex",gap:8}}>
+                <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>e.key==="Enter"&&!e.shiftKey&&sendChat()} placeholder="Doubt pucho ya plan maango..." style={{flex:1,border:"1.5px solid #e2e8f0",borderRadius:10,padding:"10px 14px",fontSize:14,fontFamily:"inherit"}}/>
+                <button onClick={sendChat} disabled={chatLoading} style={{width:42,height:42,background:"#2563eb",color:"#fff",border:"none",borderRadius:10,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                  <Icon name="send" size={16} color="#fff"/>
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ STUDY PLANNER ═══ */}
+        {page==="planner"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Study Planner</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>AI-powered weekly plan based on your performance</div>
+            </div>
+            <button onClick={genPlan} disabled={planLoading} style={{width:"100%",background:"linear-gradient(135deg,#2563eb,#7c3aed)",color:"#fff",border:"none",borderRadius:12,padding:"14px",cursor:"pointer",fontFamily:"inherit",fontWeight:700,fontSize:15,display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginBottom:20,opacity:planLoading?.7:1}}>
+              {planLoading?<><div style={{width:20,height:20,border:"2px solid rgba(255,255,255,.3)",borderTopColor:"#fff",borderRadius:"50%",animation:"spin .8s linear infinite"}}/> Generating...</>:<><Icon name="sparkle" size={18} color="#fff"/> Generate New Plan</>}
+            </button>
+            {plan?(
+              <div className="card" style={{padding:20}}>
+                <div style={{fontSize:14,fontWeight:700,marginBottom:12,color:"#111827"}}>📅 Your 7-Day Quest Plan</div>
+                <div style={{fontSize:13,color:"#374151",lineHeight:1.8}} dangerouslySetInnerHTML={{__html:renderMd(plan)}}/>
+              </div>
+            ):(
+              <div className="card" style={{padding:32,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📅</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>No Study Plan Yet</div>
+                <div style={{fontSize:13,color:"#6b7280",marginTop:4}}>AI test performance ke basis pe plan banata hai</div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ MISTAKE BOOK ═══ */}
+        {page==="mistakes"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Mistake Book</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>{mistakes.length} questions for revision</div>
+            </div>
+            {mistakes.length===0?(
+              <div className="card" style={{padding:32,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📖</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi mistake nahi abhi tak</div>
+                <div style={{fontSize:13,color:"#6b7280",marginTop:4}}>Galat answers automatically yahan save hote hain</div>
+              </div>
+            ):(
+              <div>
+                {SUBJECTS.map(s=>{
+                  const sm=mistakes.filter(m=>m.s===s);
+                  if(!sm.length) return null;
+                  return (
+                    <div key={s} className="card" style={{padding:16,marginBottom:12}}>
+                      <div style={{fontSize:14,fontWeight:700,marginBottom:10,color:s==="Mathematics"?"#7c3aed":s==="Physics"?"#0ea5e9":"#059669"}}>{s} ({sm.length})</div>
+                      {sm.slice(0,15).map(m=>(
+                        <div key={m.id} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",borderBottom:"1px solid #f8fafc"}}>
+                          <div className="q-badge incorrect">Q{m.q}</div>
+                          <div style={{flex:1}}>
+                            <div style={{fontSize:12,fontWeight:600}}>{m.ch}</div>
+                            <div style={{fontSize:11,color:"#6b7280"}}>{m.tn} · {m.date}</div>
+                          </div>
+                          <div style={{fontSize:11,color:"#ef4444",fontWeight:700}}>✗ {m.ua||"–"} | ✓ {m.ca}</div>
+                        </div>
+                      ))}
+                      {sm.length>15&&<div style={{textAlign:"center",padding:"8px 0",fontSize:12,color:"#6b7280"}}>+{sm.length-15} more</div>}
+                    </div>
+                  );
+                })}
+                <button onClick={()=>{setMistakes([]);showToast("Mistake book cleared");}} style={{width:"100%",background:"#fee2e2",color:"#dc2626",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>Clear All Mistakes</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══ GOAL TRACKER ═══ */}
+        {page==="goal"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Goal Tracker</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>Target set karo, progress track karo</div>
+            </div>
+            <div className="card" style={{padding:16,marginBottom:14}}>
+              {[
+                ["Target College","select","college",COLLEGES.map(c=>c.name)],
+                ["Daily Study Hours","number","hours",null],
+                ["Months Remaining","number","months",null],
+              ].map(([label,type,key,opts])=>(
+                <div key={key} style={{marginBottom:14}}>
+                  <label style={{fontSize:12,fontWeight:600,color:"#374151",display:"block",marginBottom:4}}>{label}</label>
+                  {type==="select"?(
+                    <select value={goal[key]||""} onChange={e=>setGoal(p=>({...p,[key]:e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14,background:"#fff"}}>
+                      {opts.map(o=><option key={o} value={o}>{o}</option>)}
+                    </select>
+                  ):(
+                    <input type="number" value={goal[key]||""} onChange={e=>setGoal(p=>({...p,[key]:+e.target.value}))} style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14}}/>
+                  )}
+                </div>
+              ))}
+              <button className="btn-primary" onClick={()=>showToast("Goal saved! 🎯")} style={{width:"100%"}}>Save Goal</button>
+            </div>
+
+            <div className="card" style={{padding:20,background:"linear-gradient(135deg,#eff6ff,#f0fdf4)",marginBottom:14,textAlign:"center"}}>
+              <div style={{fontSize:18,fontWeight:800,color:"#111827",marginBottom:4}}>{goal.college}</div>
+              <div style={{fontSize:13,color:"#6b7280",marginBottom:16}}>Required: {targetCollege.cutoff} marks</div>
+              <div style={{display:"flex",justifyContent:"space-around"}}>
+                <div><div style={{fontSize:12,color:"#6b7280"}}>Your Avg</div><div style={{fontSize:28,fontWeight:900,color:avgScore>0?"#22c55e":"#ef4444"}}>{avgScore}</div></div>
+                <div><div style={{fontSize:12,color:"#6b7280"}}>Target</div><div style={{fontSize:28,fontWeight:900,color:"#2563eb"}}>{targetCollege.cutoff}</div></div>
+                <div><div style={{fontSize:12,color:"#6b7280"}}>Gap</div><div style={{fontSize:28,fontWeight:900,color:"#f59e0b"}}>{marksGap}</div></div>
+              </div>
+            </div>
+
+            {tests.length>0&&(
+              <div className="card" style={{padding:16,marginBottom:14}}>
+                <div style={{fontSize:13,fontWeight:700,marginBottom:12}}>Score Trend vs Target</div>
+                <ResponsiveContainer width="100%" height={160}>
+                  <LineChart data={[...tests].reverse().slice(0,10).map((t,i)=>({name:`T${i+1}`,score:t.score,target:targetCollege.cutoff}))}>
+                    <XAxis dataKey="name" tick={{fontSize:10}}/><YAxis tick={{fontSize:10}}/>
+                    <Tooltip contentStyle={{fontSize:11,borderRadius:8}}/>
+                    <Line type="monotone" dataKey="score" stroke="#2563eb" strokeWidth={2} dot={{r:3}} name="Your Score"/>
+                    <Line type="monotone" dataKey="target" stroke="#ef4444" strokeWidth={2} strokeDasharray="5 5" dot={false} name="Target"/>
+                    <Legend wrapperStyle={{fontSize:11}}/>
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            <div className="card" style={{padding:16,background:"#fff7ed",border:"1px solid #fde68a"}}>
+              <div style={{fontSize:13,fontWeight:700,color:"#92400e"}}>⚡ Effort Required</div>
+              <div style={{fontSize:14,color:"#78350f",marginTop:6}}>
+                Daily Target: <strong>{goal.months>0?Math.ceil(marksGap/(goal.months*30)):0} marks/day</strong> improvement with <strong>{goal.hours}h/day</strong> study over <strong>{goal.months} months</strong>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══ COMMUNITY ═══ */}
+        {page==="community"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:16}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Community</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>Fellow aspirants se connect karo 🤝</div>
+            </div>
+            <div className="card" style={{padding:14,marginBottom:14}}>
+              <textarea value={postInput} onChange={e=>setPostInput(e.target.value)} rows={3} placeholder="Strategy share karo, doubt pucho..." style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14,resize:"none",marginBottom:10,fontFamily:"inherit"}}/>
+              <button className="btn-primary" onClick={()=>{if(!postInput.trim())return;setPosts(p=>[{id:Date.now(),name:"You",text:postInput,time:"abhi",likes:0},...p]);setPostInput("");}}>Post</button>
+            </div>
+            {posts.map(p=>(
+              <div key={p.id} className="card" style={{padding:14,marginBottom:10}}>
+                <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:8}}>
+                  <div style={{width:32,height:32,borderRadius:"50%",background:"linear-gradient(135deg,#2563eb,#7c3aed)",display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:700,flexShrink:0}}>{p.name[0].toUpperCase()}</div>
+                  <div>
+                    <div style={{fontSize:13,fontWeight:700}}>{p.name}</div>
+                    <div style={{fontSize:11,color:"#9ca3af"}}>{p.time}</div>
+                  </div>
+                </div>
+                <div style={{fontSize:14,color:"#374151",lineHeight:1.5}}>{p.text}</div>
+                <div style={{marginTop:8,display:"flex",gap:12,fontSize:12,color:"#6b7280"}}>
+                  <button onClick={()=>setPosts(prev=>prev.map(pp=>pp.id===p.id?{...pp,likes:pp.likes+1}:pp))} style={{background:"none",border:"none",cursor:"pointer",color:"#6b7280",fontSize:12,padding:0}}>❤️ {p.likes}</button>
+                </div>
+              </div>
+            ))}
+            <a href="https://t.me/biroskills" target="_blank" rel="noreferrer" style={{display:"block",background:"#0088cc",color:"#fff",borderRadius:10,padding:"12px",textAlign:"center",textDecoration:"none",fontWeight:700,fontSize:14,marginTop:8}}>📱 Join Telegram Community</a>
+          </div>
+        )}
+
+        {/* ═══ HISTORY ═══ */}
+        {page==="history"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Test History</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>{tests.length} completed attempts</div>
+            </div>
+            {tests.length===0?(
+              <div className="card" style={{padding:32,textAlign:"center"}}>
+                <div style={{fontSize:40,marginBottom:12}}>📊</div>
+                <div style={{fontSize:15,fontWeight:700,color:"#374151"}}>Koi history nahi</div>
+              </div>
+            ):tests.map(t=>(
+              <div key={t.id} className="card" style={{padding:14,marginBottom:10,cursor:"pointer",display:"flex",alignItems:"center",gap:12,transition:"transform .15s"}} onClick={()=>goAnalysis(t)}
+                onMouseEnter={e=>e.currentTarget.style.transform="translateY(-2px)"} onMouseLeave={e=>e.currentTarget.style.transform=""}>
+                <div style={{width:44,height:44,borderRadius:12,background:t.score>0?"#dcfce7":"#fee2e2",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>
+                  {t.score>0?"📈":"📉"}
+                </div>
+                <div style={{flex:1}}>
+                  <div style={{fontSize:14,fontWeight:700}}>{t.testName}</div>
+                  <div style={{fontSize:11,color:"#6b7280"}}>{t.ts}</div>
+                  <div style={{height:4,borderRadius:2,background:"#f1f5f9",marginTop:5,overflow:"hidden"}}>
+                    <div style={{width:`${Math.max(0,(t.score/t.max)*100)}%`,background:t.score>0?"#22c55e":"#ef4444",height:"100%"}}/>
+                  </div>
+                </div>
+                <div style={{textAlign:"right",flexShrink:0}}>
+                  <div style={{fontSize:16,fontWeight:800,color:t.score>0?"#22c55e":"#ef4444"}}>{t.score}/{t.max}</div>
+                  <div style={{fontSize:11,color:"#6b7280"}}>{t.acc}% acc</div>
+                </div>
+              </div>
+            ))}
+            {tests.length>0&&(
+              <button onClick={()=>{if(confirm("Sab tests delete karna chahte ho?"))setTests([]);}} style={{width:"100%",background:"#fee2e2",color:"#dc2626",border:"none",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,marginTop:8}}>Clear All History</button>
+            )}
+          </div>
+        )}
+
+        {/* ═══ SETTINGS ═══ */}
+        {page==="settings"&&(
+          <div className="fade-in">
+            <div style={{marginBottom:20}}>
+              <div style={{fontSize:22,fontWeight:800,color:"#111827",fontFamily:"'Space Grotesk',sans-serif"}}>Settings</div>
+              <div style={{fontSize:13,color:"#6b7280"}}>App configure karo</div>
+            </div>
+
+            <div className="card" style={{padding:16,marginBottom:14}}>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>🔑 Anthropic API Key</div>
+              <div style={{fontSize:12,color:"#6b7280",marginBottom:12}}>Biro-Brain AI aur Study Planner ke liye zaroori hai. Key console.anthropic.com se lo.</div>
+              <input type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)} placeholder="sk-ant-api03-..." style={{width:"100%",border:"1.5px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:14,marginBottom:10}}/>
+              <button className="btn-primary" onClick={()=>{store.set("biro-key",apiKey);showToast("API key saved! ✅");}} style={{width:"100%"}}>Save API Key</button>
+              <div style={{fontSize:11,color:"#6b7280",marginTop:8}}>⚠️ Key browser localStorage mein save hoti hai. Production mein server-side use karo.</div>
+            </div>
+
+            <div className="card" style={{padding:16,marginBottom:14}}>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:12}}>📤 Export / Import Data</div>
+              <div style={{display:"flex",gap:10}}>
+                <button onClick={()=>{const d={tests,mistakes,goal};const b=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="biro-backup.json";a.click();showToast("Data exported! 📥");}} style={{flex:1,background:"#eff6ff",color:"#2563eb",border:"1px solid #bfdbfe",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>
+                  <Icon name="download" size={14} color="#2563eb"/> Export
+                </button>
+                <label style={{flex:1,background:"#f0fdf4",color:"#15803d",border:"1px solid #bbf7d0",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13,textAlign:"center",display:"flex",alignItems:"center",justifyContent:"center",gap:4}}>
+                  📂 Import
+                  <input type="file" accept=".json" style={{display:"none"}} onChange={e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=ev=>{try{const d=JSON.parse(ev.target.result);if(d.tests)setTests(d.tests);if(d.mistakes)setMistakes(d.mistakes);if(d.goal)setGoal(d.goal);showToast("Data imported! ✅");}catch{showToast("Invalid file!","error");}};r.readAsText(f);}}/>
+                </label>
+              </div>
+            </div>
+
+            <div className="card" style={{padding:16,background:"#fff5f5"}}>
+              <div style={{fontSize:14,fontWeight:700,marginBottom:4,color:"#dc2626"}}>⚠️ Danger Zone</div>
+              <div style={{fontSize:12,color:"#6b7280",marginBottom:12}}>Ye actions undo nahi ho sakti</div>
+              <button onClick={()=>{if(confirm("Sab data delete karna chahte ho?")){{setTests([]);setMistakes([]);setPlan(null);localStorage.clear();showToast("All data cleared","error")}}}} style={{width:"100%",background:"#fee2e2",color:"#dc2626",border:"1px solid #fca5a5",borderRadius:10,padding:"10px",cursor:"pointer",fontFamily:"inherit",fontWeight:600,fontSize:13}}>🗑️ Clear All Data</button>
+            </div>
+
+            <div className="card" style={{padding:16,marginTop:14,textAlign:"center"}}>
+              <div style={{fontSize:22,marginBottom:8}}>🚀</div>
+              <div style={{fontSize:13,fontWeight:700,color:"#374151"}}>Biro Test v1.0</div>
+              <div style={{fontSize:12,color:"#6b7280",marginTop:4}}>Made with ❤️ for JEE/NEET aspirants</div>
+              <a href="https://t.me/biroskills" target="_blank" rel="noreferrer" style={{display:"inline-block",marginTop:10,color:"#2563eb",fontSize:12,fontWeight:600}}>Join Telegram Community →</a>
+            </div>
+          </div>
+        )}
+
+      </div>{/* end content */}
+
+      {/* BOTTOM NAV */}
+      <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:480,background:"#fff",borderTop:"1px solid #e2e8f0",display:"flex",zIndex:50,paddingBottom:"env(safe-area-inset-bottom)"}}>
+        {[["dashboard","Home","dashboard"],["tests","Tests","tests"],["analysis","Analysis","chart"],["birobrain","AI","brain"],["community","Social","community"]].map(([p,l,icon])=>(
+          <button key={p} onClick={()=>{if(p==="analysis"&&!analysis){setPage("external");return;}setPage(p);}} style={{flex:1,background:"none",border:"none",cursor:"pointer",padding:"8px 4px 10px",display:"flex",flexDirection:"column",alignItems:"center",gap:2,color:page===p?"#2563eb":"#9ca3af",fontFamily:"inherit",transition:"color .15s"}}>
+            <Icon name={icon} size={20} color={page===p?"#2563eb":"#9ca3af"}/>
+            <span style={{fontSize:9,fontWeight:page===p?700:500}}>{l}</span>
+          </button>
+        ))}
+      </div>
+
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
