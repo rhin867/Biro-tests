@@ -1,0 +1,1 @@
+DROP VIEW IF EXISTS public.app_settings_public;
