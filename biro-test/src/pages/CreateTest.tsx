@@ -136,7 +136,7 @@ function CreateTestInner() {
         }
 
         // Call the new Python limit-free backend instead of Supabase
-        const response = await fetch('http://localhost:7860/extract-questions', {
+const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ pdfText: requestBody.pdfText || '' })
