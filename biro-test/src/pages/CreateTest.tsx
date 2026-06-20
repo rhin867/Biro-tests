@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 import { saveTest, generateId, saveTestPdfPageImages } from '@/lib/storage';
 import { Test, Question, Subject } from '@/types/exam';
 import { supabase } from '@/integrations/supabase/client';
-import { renderPDFPagesToImages, fileToBase64, PDFPageImage } from '@/lib/pdf-cropper';
+import { renderPDFPagesToImages, fileToBase64, PDFPageImage, autoCropQuestions } from '@/lib/pdf-cropper';
 import { LatexRenderer } from '@/components/ui/latex-renderer';
 import { PDFCropTool } from '@/components/exam/PDFCropTool';
 import { Upload, FileText, Loader2, Sparkles, AlertCircle, CheckCircle, Image, ZoomIn, Crop, RefreshCw, Share2, Link2 } from 'lucide-react';
@@ -31,6 +31,7 @@ function CreateTestInner() {
   const [positiveMarking, setPositiveMarking] = useState(4);
   const [negativeMarking, setNegativeMarking] = useState(1);
   const [extractedQuestions, setExtractedQuestions] = useState<Question[]>([]);
+  const [conversionMode, setConversionMode] = useState<'ai_full' | 'manual_crop' | 'auto_slice' | 'ai_hybrid'>('ai_full');
   const [step, setStep] = useState<'upload' | 'configure' | 'review'>('upload');
   const [extractionStats, setExtractionStats] = useState<{
     totalExtracted: number;
@@ -99,33 +100,59 @@ function CreateTestInner() {
     }
   }, []);
 
+  
   const extractQuestions = useCallback(async () => {
     setIsProcessing(true);
     setExtractionFailed(false);
     const startTime = Date.now();
 
     try {
+      if (conversionMode === 'manual_crop' || conversionMode === 'ai_hybrid') {
+        setShowCropTool(true);
+        setIsProcessing(false);
+        return;
+      }
+
+      if (conversionMode === 'auto_slice') {
+        if (!pdfFile) throw new Error("No PDF file");
+        const arrayBuffer = await pdfFile.arrayBuffer();
+        const autoCrops = await autoCropQuestions(arrayBuffer, 3, 2);
+        const newQuestions = autoCrops.map((crop, i) => ({
+          id: generateId(),
+          questionNumber: i + 1,
+          subject: 'Physics',
+          chapter: 'General',
+          question: '',
+          options: { A: '', B: '', C: '', D: '' },
+          correctAnswer: null,
+          type: 'MCQ',
+          level: 'Medium',
+          imageUrl: crop.imageDataUrl,
+          croppedImageUrl: crop.imageDataUrl,
+          hasDiagram: true
+        }));
+        setExtractedQuestions(newQuestions as any);
+        setStep('review');
+        setIsProcessing(false);
+        return;
+      }
+
+      // AI Full Extraction
       const latestQuota = await fetchQuotaInfo();
       setQuota(latestQuota);
       if (latestQuota.exceeded) {
-        toast.error(`Quota reached: ${latestQuota.dailyUsed}/${latestQuota.dailyLimit} today, ${latestQuota.monthlyUsed}/${latestQuota.monthlyLimit} this month.`);
+        toast.error(`Quota reached: ${latestQuota.dailyUsed}/${latestQuota.dailyLimit} today`);
+        setIsProcessing(false);
         return;
       }
 
       toast.info('Extracting questions with AI (20-40 seconds)...');
-      let requestBody: any = {};
-
+      let requestBody: any = { pdfText };
       if (pdfFile) {
         const base64Data = await fileToBase64(pdfFile);
-        requestBody = {
-          pdfBase64: base64Data,
-          mimeType: 'application/pdf',
-        };
-      } else {
-        requestBody = { pdfText };
+        requestBody.pdfBase64 = base64Data;
       }
 
-      // Auto-retry up to 2 times
       let data: any = null;
       let lastErr: any = null;
 
@@ -135,15 +162,13 @@ function CreateTestInner() {
           await new Promise(r => setTimeout(r, 2000));
         }
 
-        // Call the new Python limit-free backend instead of Supabase
-const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-questions', {
+        const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-questions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ pdfText: requestBody.pdfText || '' })
+          body: JSON.stringify(requestBody)
         });
         
         const result = await response.json();
-
         if (result.error) {
           if (result.retryable) {
             lastErr = new Error(result.error);
@@ -151,24 +176,19 @@ const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-qu
           }
           throw new Error(result.error);
         }
-
         data = result;
         break;
       }
 
-      if (!data) {
-        throw lastErr || new Error('Extraction failed. Please try again.');
-      }
+      if (!data) throw lastErr || new Error('Extraction failed');
 
       const elapsed = Math.round((Date.now() - startTime) / 1000);
       setExtractionTime(elapsed);
 
-      const questions: Question[] = (data.questions || []).map((q: any, index: number) => {
+      const questions = (data.questions || []).map((q: any, index: number) => {
         const options = Array.isArray(q.options)
           ? { A: q.options[0] || '', B: q.options[1] || '', C: q.options[2] || '', D: q.options[3] || '' }
           : { A: q.options?.A || '', B: q.options?.B || '', C: q.options?.C || '', D: q.options?.D || '' };
-        const hasOptions = Object.values(options).some(v => String(v).trim());
-        const type = !hasOptions ? 'Numerical' : (q.type === 'MSQ' ? 'MSQ' : 'MCQ');
         return {
           id: generateId(),
           questionNumber: Number(q.questionNumber || index + 1),
@@ -177,32 +197,14 @@ const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-qu
           question: q.question || '',
           options,
           correctAnswer: q.correctAnswer || null,
-          type,
-          level: 'JEE',
-          hasDiagram: Boolean(q.hasDiagram),
-          pdfPageNumber: q.pdfPageNumber ? Number(q.pdfPageNumber) : null,
+          type: 'MCQ',
+          level: 'Medium'
         };
       });
 
-      // Deduct quota immediately after successful extraction
-      try {
-        await logTestCreation({ testId: 'extracted-draft', testName: data.examTitle || 'PDF Extraction', aiCalls: 1 });
-      } catch (e) {
-        console.error('Failed to log quota usage', e);
-      }
-
       setExtractedQuestions(questions);
-      setExtractionStats({
-        totalExtracted: data.totalExtracted || questions.length,
-        subjectCounts: data.subjectCounts || {},
-        examTitle: data.examTitle,
-      });
-
-      if (data.examTitle && data.examTitle !== 'Extracted Test') {
-        setTestName(data.examTitle);
-      }
-
       setStep('review');
+
       toast.success(`Extracted ${questions.length} questions in ${elapsed}s`);
     } catch (error: any) {
       console.error('Extraction error:', error);
@@ -428,6 +430,41 @@ const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-qu
               </Button>
             )}
 
+            
+            <div className="space-y-4 mb-6">
+              <Label>Conversion Mode (Quota Saver)</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div 
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${conversionMode === 'manual_crop' ? 'border-primary bg-primary/10' : 'bg-card hover:bg-accent'}`}
+                  onClick={() => setConversionMode('manual_crop')}
+                >
+                  <p className="font-semibold text-sm">Mode 1: Manual Crop</p>
+                  <p className="text-xs text-muted-foreground">Free & Infinite. Crop images manually.</p>
+                </div>
+                <div 
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${conversionMode === 'auto_slice' ? 'border-primary bg-primary/10' : 'bg-card hover:bg-accent'}`}
+                  onClick={() => setConversionMode('auto_slice')}
+                >
+                  <p className="font-semibold text-sm">Mode 2: Auto Slicer</p>
+                  <p className="text-xs text-muted-foreground">Free & Infinite. Auto-cuts PDF into sections.</p>
+                </div>
+                <div 
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${conversionMode === 'ai_full' ? 'border-primary bg-primary/10' : 'bg-card hover:bg-accent'}`}
+                  onClick={() => setConversionMode('ai_full')}
+                >
+                  <p className="font-semibold text-sm">Mode 3: Full AI Extraction</p>
+                  <p className="text-xs text-muted-foreground">Uses Quota. AI extracts text & LaTeX.</p>
+                </div>
+                <div 
+                  className={`p-3 border rounded-lg cursor-pointer transition-colors ${conversionMode === 'ai_hybrid' ? 'border-primary bg-primary/10' : 'bg-card hover:bg-accent'}`}
+                  onClick={() => setConversionMode('ai_hybrid')}
+                >
+                  <p className="font-semibold text-sm">Mode 4: AI + Manual Hybrid</p>
+                  <p className="text-xs text-muted-foreground">Uses Quota per crop. Crop then extract text.</p>
+                </div>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <Button variant="outline" onClick={() => setStep('upload')}>Back</Button>
               <Button onClick={extractQuestions} disabled={isProcessing} className="flex-1">
@@ -568,17 +605,78 @@ const response = await fetch('https://rhin867-biro-tests-api.hf.space/extract-qu
         open={showCropTool}
         onOpenChange={setShowCropTool}
         pages={pdfPageImages}
-        onCroppedQuestions={(crops) => {
-          const targets = extractedQuestions
-            .map((q, index) => ({ q, index }))
-            .filter(({ q }) => q.hasDiagram || q.pdfPageNumber)
-            .sort((a, b) => (a.q.pdfPageNumber || 999) - (b.q.pdfPageNumber || 999) || a.q.questionNumber - b.q.questionNumber);
-          setExtractedQuestions(prev => prev.map((q) => {
-            const targetIndex = targets.findIndex(t => t.q.id === q.id);
-            const crop = targetIndex >= 0 ? crops[targetIndex] : undefined;
-            return crop ? { ...q, croppedImageUrl: crop.dataUrl, hasDiagram: true, pdfPageNumber: crop.pageNumber } : q;
-          }));
-          toast.success(`${crops.length} regions cropped and attached to diagram questions.`);
+        onCroppedQuestions={async (crops) => {
+          if (conversionMode === 'manual_crop') {
+            const newQuestions = crops.map((crop, i) => ({
+              id: generateId(),
+              questionNumber: i + 1,
+              subject: 'Physics',
+              chapter: 'General',
+              question: '',
+              options: { A: '', B: '', C: '', D: '' },
+              correctAnswer: null,
+              type: 'MCQ',
+              level: 'Medium',
+              imageUrl: crop.dataUrl,
+              croppedImageUrl: crop.dataUrl,
+              hasDiagram: true
+            }));
+            setExtractedQuestions(newQuestions as any);
+            setStep('review');
+            toast.success(`${crops.length} questions created manually!`);
+          } else if (conversionMode === 'ai_hybrid') {
+            setIsProcessing(true);
+            toast.info('Extracting text from crops using AI...');
+            try {
+              const newQuestions = [];
+              for (let i = 0; i < crops.length; i++) {
+                 const crop = crops[i];
+                 const res = await fetch('https://rhin867-biro-tests-api.hf.space/extract-crop', {
+                   method: 'POST',
+                   headers: { 'Content-Type': 'application/json' },
+                   body: JSON.stringify({ imageBase64: crop.dataUrl })
+                 });
+                 const data = await res.json();
+                 if (data.question) {
+                    const q = data.question;
+                    newQuestions.push({
+                      id: generateId(),
+                      questionNumber: i + 1,
+                      subject: 'Physics',
+                      chapter: 'General',
+                      question: q.question || '',
+                      options: {
+                        A: q.options?.[0] || '', B: q.options?.[1] || '',
+                        C: q.options?.[2] || '', D: q.options?.[3] || ''
+                      },
+                      correctAnswer: q.correctAnswer || null,
+                      type: 'MCQ',
+                      level: 'Medium',
+                      croppedImageUrl: crop.dataUrl,
+                      hasDiagram: true
+                    });
+                 }
+              }
+              setExtractedQuestions(newQuestions as any);
+              setStep('review');
+              toast.success(`${newQuestions.length} questions extracted via Hybrid AI!`);
+            } catch (err) {
+               toast.error('Hybrid AI extraction failed');
+            } finally {
+               setIsProcessing(false);
+            }
+          } else {
+            const targets = extractedQuestions
+              .map((q, index) => ({ q, index }))
+              .filter(({ q }) => q.hasDiagram || q.pdfPageNumber)
+              .sort((a, b) => (a.q.pdfPageNumber || 999) - (b.q.pdfPageNumber || 999) || a.q.questionNumber - b.q.questionNumber);
+            setExtractedQuestions(prev => prev.map((q) => {
+              const targetIndex = targets.findIndex(t => t.q.id === q.id);
+              const crop = targetIndex >= 0 ? crops[targetIndex] : undefined;
+              return crop ? { ...q, croppedImageUrl: crop.dataUrl, hasDiagram: true, pdfPageNumber: crop.pageNumber } : q;
+            }));
+            toast.success(`${crops.length} regions cropped and attached to diagram questions.`);
+          }
         }}
       />
     </MainLayout>
