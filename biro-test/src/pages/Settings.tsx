@@ -6,14 +6,34 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Key, Eye, EyeOff, CheckCircle, AlertCircle, Download, User, Lock } from 'lucide-react';
+import { Key, Eye, EyeOff, CheckCircle, AlertCircle, Download, User } from 'lucide-react';
 
-export function getUserApiKey(): string | null {
-  return localStorage.getItem('user_gemini_api_key');
+export function getUserApiKeys(): string[] {
+  try {
+    const raw = localStorage.getItem('user_gemini_api_keys');
+    if (raw) {
+      const keys = JSON.parse(raw);
+      if (Array.isArray(keys)) return keys.filter(Boolean);
+    }
+  } catch {}
+  const single = localStorage.getItem('user_gemini_api_key');
+  return single ? [single] : [];
 }
 
-export function setUserApiKey(key: string): void {
-  localStorage.setItem('user_gemini_api_key', key);
+export function setUserApiKeys(keys: string[]): void {
+  localStorage.setItem('user_gemini_api_keys', JSON.stringify(keys));
+  if (keys.length > 0) {
+    localStorage.setItem('user_gemini_api_key', keys[0]);
+  } else {
+    localStorage.removeItem('user_gemini_api_key');
+  }
+}
+
+export function getUserApiKey(): string | null {
+  const keys = getUserApiKeys();
+  if (keys.length === 0) return null;
+  const idx = Math.floor(Math.random() * keys.length);
+  return keys[idx];
 }
 
 const USER_ID_KEY = 'user_profile_id';
@@ -23,6 +43,7 @@ export default function Settings() {
   const [apiKey, setApiKey] = useState('');
   const [showKey, setShowKey] = useState(false);
   const [hasKey, setHasKey] = useState(false);
+  const [apiKeys, setApiKeys] = useState<string[]>([]);
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   
   // User ID system
@@ -33,24 +54,31 @@ export default function Settings() {
   const [loginPass, setLoginPass] = useState('');
 
   useEffect(() => {
-    const existing = getUserApiKey();
-    if (existing) { setApiKey(existing); setHasKey(true); }
+    const keys = getUserApiKeys();
+    setApiKeys(keys);
+    setHasKey(keys.length > 0);
 
     const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e); };
     window.addEventListener('beforeinstallprompt', handler);
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
-  const handleSaveKey = () => {
+  const handleAddKey = () => {
     if (!apiKey.trim()) { toast.error('Please enter your Gemini API key'); return; }
-    setUserApiKey(apiKey.trim());
+    if (apiKeys.includes(apiKey.trim())) { toast.error('Key already added'); return; }
+    const updated = [...apiKeys, apiKey.trim()];
+    setApiKeys(updated);
+    setUserApiKeys(updated);
     setHasKey(true);
-    toast.success('API key saved! You can now create unlimited tests.');
+    setApiKey('');
+    toast.success('API key added! Stored in key rotation pool.');
   };
 
-  const handleRemoveKey = () => {
-    localStorage.removeItem('user_gemini_api_key');
-    setApiKey(''); setHasKey(false);
+  const handleRemoveKey = (indexToRemove: number) => {
+    const updated = apiKeys.filter((_, idx) => idx !== indexToRemove);
+    setApiKeys(updated);
+    setUserApiKeys(updated);
+    setHasKey(updated.length > 0);
     toast.success('API key removed');
   };
 
@@ -68,7 +96,7 @@ export default function Settings() {
   const handleCreateProfile = () => {
     if (!userId.trim() || !userPass.trim()) { toast.error('Enter both ID and password'); return; }
     localStorage.setItem(USER_ID_KEY, userId.trim());
-    localStorage.setItem(USER_PASS_KEY, userPass.trim());
+    localStorage.setItem(`profile_pass_${userId.trim()}`, userPass.trim());
     // Save all current data under this user ID
     const allData: Record<string, string> = {};
     for (let i = 0; i < localStorage.length; i++) {
@@ -87,6 +115,10 @@ export default function Settings() {
     
     // Check stored profile
     if (savedData) {
+      if (savedPass !== loginPass.trim()) {
+        toast.error('Incorrect password');
+        return;
+      }
       try {
         const data = JSON.parse(savedData);
         // Restore all data
@@ -118,35 +150,79 @@ export default function Settings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Key className="h-5 w-5 text-primary" />
-              Gemini API Key (Required)
+              Gemini API Keys Rotation Pool
             </CardTitle>
             <CardDescription>
-              Required for creating tests and AI features. Get one free at{' '}
-              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+              Add 3-4 keys to rotate automatically and avoid hitting AI limits. Get a key free at{' '}
+              <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">
                 Google AI Studio
               </a>
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="relative">
-              <Input type={showKey ? 'text' : 'password'} value={apiKey}
-                onChange={e => setApiKey(e.target.value)} placeholder="AIzaSy..." className="pr-10" />
-              <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={() => setShowKey(!showKey)}>
-                {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </Button>
+            {apiKeys.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-xs">Active Keys ({apiKeys.length})</Label>
+                <div className="space-y-1.5 max-h-40 overflow-y-auto">
+                  {apiKeys.map((k, index) => (
+                    <div key={index} className="flex items-center justify-between p-2 border rounded bg-background text-xs">
+                      <span className="font-mono text-muted-foreground truncate max-w-[200px]">
+                        {showKey ? k : `${k.substring(0, 8)}...${k.substring(k.length - 4)}`}
+                      </span>
+                      <Button variant="ghost" size="sm" className="h-7 text-destructive hover:text-destructive hover:bg-destructive/10" onClick={() => handleRemoveKey(index)}>
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-xs">Add API Key</Label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <Input type={showKey ? 'text' : 'password'} value={apiKey}
+                    onChange={e => setApiKey(e.target.value)} placeholder="AIzaSy..." className="pr-10 h-9" />
+                  <Button variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={() => setShowKey(!showKey)}>
+                    {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <Button onClick={handleAddKey} size="sm" className="h-9">Add</Button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              {hasKey ? (
-                <Badge className="bg-correct/20 text-correct border-correct/30"><CheckCircle className="h-3 w-3 mr-1" />Key Active</Badge>
-              ) : (
-                <Badge variant="outline" className="text-review border-review/30"><AlertCircle className="h-3 w-3 mr-1" />No Key - Set to use app</Badge>
+            
+            <div className="text-xs font-medium mt-1 flex justify-between">
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                <Key className="h-3 w-3" /> Create / Find API Key
+              </a>
+              {apiKeys.length > 0 && (
+                <button className="text-[10px] text-muted-foreground hover:underline" onClick={() => {
+                  setUserApiKeys([]);
+                  setApiKeys([]);
+                  setHasKey(false);
+                  toast.success('All API keys cleared');
+                }}>Clear All</button>
               )}
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSaveKey} className="flex-1">Save Key</Button>
-              {hasKey && <Button variant="destructive" onClick={handleRemoveKey}>Remove</Button>}
+
+            <div className="flex items-center gap-2">
+              {hasKey ? (
+                <Badge className="bg-correct/20 text-correct border-correct/30"><CheckCircle className="h-3 w-3 mr-1" />{apiKeys.length} Key(s) Active</Badge>
+              ) : (
+                <Badge variant="outline" className="text-review border-review/30"><AlertCircle className="h-3 w-3 mr-1" />No Keys Active</Badge>
+              )}
             </div>
-            <p className="text-xs text-muted-foreground">Stored locally in your browser. Never sent to our servers.</p>
+            <p className="text-[10px] text-muted-foreground">Stored locally in your browser. The app will choose a key at random from your pool for each AI request.</p>
+            
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-sm font-medium flex items-center gap-2">
+                Need Help or Suggestions?
+              </p>
+              <a href="https://t.me/biro1_a" target="_blank" rel="noreferrer" className="text-xs text-primary hover:underline mt-1 inline-block">
+                Contact Owner on Telegram: @biro1_a
+              </a>
+            </div>
           </CardContent>
         </Card>
 
