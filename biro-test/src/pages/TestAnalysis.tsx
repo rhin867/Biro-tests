@@ -17,6 +17,7 @@ import { QuestionJourney } from '@/components/analysis/QuestionJourney';
 import { SubjectMovement } from '@/components/analysis/SubjectMovement';
 import { ScorePotential } from '@/components/analysis/ScorePotential';
 import { AttemptAnalysis } from '@/components/analysis/AttemptAnalysis';
+import { AdvancedAnalysis } from '@/components/analysis/AdvancedAnalysis';
 import { DifficultyAnalysis } from '@/components/analysis/DifficultyAnalysis';
 import { MissedConcepts } from '@/components/analysis/MissedConcepts';
 import { PainfulQuestions } from '@/components/analysis/PainfulQuestions';
@@ -73,7 +74,6 @@ import {
   Legend,
 } from 'recharts';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function TestAnalysis() {
@@ -374,6 +374,7 @@ export default function TestAnalysis() {
             <TabsTrigger value="painful">Painful Qs</TabsTrigger>
             <TabsTrigger value="missed-concepts">Missed Concepts</TabsTrigger>
             <TabsTrigger value="questions">Qs by Qs Analysis</TabsTrigger>
+            <TabsTrigger value="advanced">Advanced Analysis</TabsTrigger>
             <TabsTrigger value="complete-analysis">Complete Analysis</TabsTrigger>
             <TabsTrigger value="chapters">Chapters</TabsTrigger>
             <TabsTrigger value="mistakes">Mistakes</TabsTrigger>
@@ -472,6 +473,11 @@ export default function TestAnalysis() {
           </div>
 
           <PerformanceComparison result={result} />
+        </TabsContent>
+
+        {/* Advanced Analysis Tab */}
+        <TabsContent value="advanced" className="space-y-6">
+          <AdvancedAnalysis questionResults={result.questionResults} subjectWise={result.subjectWise} />
         </TabsContent>
 
         {/* Score Potential Tab */}
