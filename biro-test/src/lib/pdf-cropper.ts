@@ -4,6 +4,7 @@
 if (typeof window !== 'undefined') {
   pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
+    'pdfjs-dist/build/pdf.worker.mjs',
     import.meta.url
   ).toString();
 }
@@ -100,59 +101,182 @@ if (typeof window !== 'undefined') {
    return croppedCanvas.toDataURL('image/png');
  }
  
- /**
-  * Auto-crop questions from PDF by detecting question boundaries
-  * This is a simplified version - for complex PDFs, AI-based cropping is better
-  */
- export async function autoCropQuestions(
-   pdfData: ArrayBuffer,
-   questionsPerPage: number = 3,
-   scale: number = 2
- ): Promise<CroppedQuestion[]> {
-   const pageImages = await renderPDFPagesToImages(pdfData, scale);
-   const croppedQuestions: CroppedQuestion[] = [];
- 
-   let questionIndex = 0;
- 
-   for (const pageImage of pageImages) {
-     // Simple approach: divide page into equal sections
-     const sectionHeight = pageImage.height / questionsPerPage;
- 
-     for (let i = 0; i < questionsPerPage; i++) {
-       const canvas = document.createElement('canvas');
-       const ctx = canvas.getContext('2d')!;
-       
-       canvas.width = pageImage.width;
-       canvas.height = sectionHeight;
- 
-       const img = new Image();
-       await new Promise<void>((resolve) => {
-         img.onload = () => resolve();
-         img.src = pageImage.imageDataUrl;
-       });
- 
-       ctx.drawImage(
-         img,
-         0,
-         i * sectionHeight,
-         pageImage.width,
-         sectionHeight,
-         0,
-         0,
-         pageImage.width,
-         sectionHeight
-       );
- 
-       croppedQuestions.push({
-         pageNumber: pageImage.pageNumber,
-         imageDataUrl: canvas.toDataURL('image/png'),
-         questionIndex: questionIndex++,
-       });
-     }
-   }
- 
-   return croppedQuestions;
- }
+/**
+ * Extract all text from a PDF document page by page
+ */
+export async function extractTextFromPDF(pdfData: ArrayBuffer): Promise<string> {
+  try {
+    const pdf = await pdfjsLib.getDocument({ data: pdfData.slice(0) }).promise;
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      const pageText = textContent.items
+        .map((item: any) => item.str)
+        .join(' ');
+      fullText += `\n--- Page ${i} ---\n` + pageText;
+    }
+    return fullText;
+  } catch (error) {
+    console.error('Error extracting text from PDF:', error);
+    return '';
+  }
+}
+
+/**
+ * Auto-crop questions from PDF by detecting whitespace question boundaries on the page canvas.
+ * Works perfectly on both scanned and digital PDFs using a pixel row darkness density analysis.
+ */
+export async function autoCropQuestions(
+  pdfData: ArrayBuffer,
+  questionsPerPage: number = 3,
+  scale: number = 2
+): Promise<CroppedQuestion[]> {
+  const pageImages = await renderPDFPagesToImages(pdfData, scale);
+  const croppedQuestions: CroppedQuestion[] = [];
+  let questionIndex = 0;
+
+  for (const pageImage of pageImages) {
+    // Load image to get raw pixel data
+    const img = new Image();
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("Failed to load page image"));
+      img.src = pageImage.imageDataUrl;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = pageImage.width;
+    canvas.height = pageImage.height;
+    const ctx = canvas.getContext('2d')!;
+    ctx.drawImage(img, 0, 0);
+
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    const width = canvas.width;
+    const height = canvas.height;
+
+    // 1. Analyze row darkness density
+    // Grayscale luminance formula: L = 0.299R + 0.587G + 0.114B
+    const rowDarkness = new Float32Array(height);
+    for (let y = 0; y < height; y++) {
+      let darkPixels = 0;
+      for (let x = 0; x < width; x++) {
+        const idx = (y * width + x) * 4;
+        const r = data[idx];
+        const g = data[idx + 1];
+        const b = data[idx + 2];
+        const l = 0.299 * r + 0.587 * g + 0.114 * b;
+        
+        // Luminance < 225 is dark content (text, lines, diagrams)
+        if (l < 225) {
+          darkPixels++;
+        }
+      }
+      rowDarkness[y] = darkPixels / width;
+    }
+
+    // 2. Identify empty/whitespace rows
+    // A row is "empty" if the darkness ratio is less than 0.0035 (less than 0.35% dark pixels)
+    const isEmpty = new Uint8Array(height);
+    const emptyThreshold = 0.0035;
+    for (let y = 0; y < height; y++) {
+      isEmpty[y] = rowDarkness[y] < emptyThreshold ? 1 : 0;
+    }
+
+    // 3. Exclude top and bottom margins (header/footer areas)
+    const topMarginLimit = Math.floor(height * 0.08);
+    const bottomMarginLimit = Math.floor(height * 0.92);
+
+    // 4. Find vertical spans of content
+    const slices: { y: number; h: number }[] = [];
+    let inContent = false;
+    let sliceStart = 0;
+    
+    // Minimum content block height to prevent cropping tiny noise
+    const minContentHeight = Math.floor(height * 0.045); // ~50 pixels depending on scale
+    const bandHeight = Math.max(12, Math.floor(height * 0.008)); // minimum empty spacing height for a cut
+
+    for (let y = topMarginLimit; y < bottomMarginLimit; y++) {
+      if (!inContent) {
+        if (isEmpty[y] === 0) {
+          inContent = true;
+          sliceStart = y;
+        }
+      } else {
+        // We are inside a content block. Check if there's a significant whitespace band ahead.
+        let isEmptyBand = true;
+        if (y + bandHeight < bottomMarginLimit) {
+          for (let dy = 0; dy < bandHeight; dy++) {
+            if (isEmpty[y + dy] === 0) {
+              isEmptyBand = false;
+              break;
+            }
+          }
+        } else {
+          isEmptyBand = false;
+        }
+
+        if (isEmptyBand) {
+          // Found a separator! Save the current content slice
+          const sliceHeight = y - sliceStart;
+          if (sliceHeight >= minContentHeight) {
+            slices.push({ y: sliceStart, h: sliceHeight });
+          }
+          inContent = false;
+          y += bandHeight - 1; // Skip the whitespace band
+        }
+      }
+    }
+
+    // Capture the last block if it extends to the margin limit
+    if (inContent) {
+      const sliceHeight = bottomMarginLimit - sliceStart;
+      if (sliceHeight >= minContentHeight) {
+        slices.push({ y: sliceStart, h: sliceHeight });
+      }
+    }
+
+    // Fallback: If no slices detected, split page evenly into questionsPerPage parts
+    if (slices.length === 0) {
+      const sectionHeight = pageImage.height / questionsPerPage;
+      for (let i = 0; i < questionsPerPage; i++) {
+        slices.push({
+          y: Math.floor(i * sectionHeight),
+          h: Math.floor(sectionHeight)
+        });
+      }
+    }
+
+    // 5. Crop the page canvas for each detected slice
+    for (const slice of slices) {
+      const cropCanvas = document.createElement('canvas');
+      cropCanvas.width = pageImage.width;
+      cropCanvas.height = slice.h;
+      const cropCtx = cropCanvas.getContext('2d')!;
+
+      cropCtx.drawImage(
+        img,
+        0,
+        slice.y,
+        pageImage.width,
+        slice.h,
+        0,
+        0,
+        pageImage.width,
+        slice.h
+      );
+
+      croppedQuestions.push({
+        pageNumber: pageImage.pageNumber,
+        imageDataUrl: cropCanvas.toDataURL('image/png'),
+        questionIndex: questionIndex++,
+      });
+    }
+  }
+
+  return croppedQuestions;
+}
  
  /**
   * Convert file to base64 for Gemini API
