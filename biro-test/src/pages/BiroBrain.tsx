@@ -29,7 +29,37 @@ export default function BiroBrain() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [dailyCount, setDailyCount] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const DAILY_LIMIT = 5;
+
+  useEffect(() => {
+    // Check daily usage
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const raw = localStorage.getItem('birobrain_daily_usage');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed.date === today) {
+          setDailyCount(parsed.count || 0);
+        } else {
+          localStorage.setItem('birobrain_daily_usage', JSON.stringify({ date: today, count: 0 }));
+        }
+      } else {
+        localStorage.setItem('birobrain_daily_usage', JSON.stringify({ date: today, count: 0 }));
+      }
+    } catch { }
+  }, []);
+
+  const incrementDailyCount = () => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const nextCount = dailyCount + 1;
+      setDailyCount(nextCount);
+      localStorage.setItem('birobrain_daily_usage', JSON.stringify({ date: today, count: nextCount }));
+    } catch {}
+  };
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,6 +67,10 @@ export default function BiroBrain() {
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || isLoading) return;
+    if (dailyCount >= DAILY_LIMIT) {
+      toast.error('Daily limit of 5 messages reached. Come back tomorrow!');
+      return;
+    }
     const userMsg: Message = { role: 'user', content: text.trim() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
@@ -99,6 +133,7 @@ export default function BiroBrain() {
           } catch { /* partial */ }
         }
       }
+      incrementDailyCount();
     } catch (e: any) {
       toast.error(e.message || 'Failed to get response');
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I encountered an error. Please try again.' }]);
@@ -173,18 +208,26 @@ export default function BiroBrain() {
             <div ref={scrollRef} />
           </ScrollArea>
 
-          <div className="flex gap-2 mt-3 pt-3 border-t border-border">
-            <Input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
-              placeholder="Ask Biro-Brain anything..."
-              disabled={isLoading}
-              className="flex-1"
-            />
-            <Button onClick={() => sendMessage(input)} disabled={isLoading || !input.trim()} size="icon">
-              <Send className="h-4 w-4" />
-            </Button>
+          <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-border">
+            <div className="text-xs text-muted-foreground flex justify-between">
+              <span>Biro-Brain Limits</span>
+              <span className={dailyCount >= DAILY_LIMIT ? 'text-destructive font-bold' : ''}>
+                {dailyCount} / {DAILY_LIMIT} messages used today
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
+                placeholder={dailyCount >= DAILY_LIMIT ? "Daily limit reached..." : "Ask Biro-Brain anything..."}
+                disabled={isLoading || dailyCount >= DAILY_LIMIT}
+                className="flex-1"
+              />
+              <Button onClick={() => sendMessage(input)} disabled={isLoading || !input.trim() || dailyCount >= DAILY_LIMIT} size="icon">
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
